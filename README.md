@@ -47,5 +47,3 @@ Here is how you should begin working on any task or bug fix.
   some stories out of the backlog and work on them. We should try to avoid creating new stories 
   after we've already decided what to work on for the week (or two), but it's not terrible if it happens.
 * In-depth discussions regarding features, tasks, or bugs should be done in the relevant story's comment section.
-* 
-  
