@@ -38,7 +38,7 @@ Here is how you should begin working on any task or bug fix.
 	git commit -m "TG-2 #ready-for-test This is a unique description of my last commit"
 	```
    
-    Note: Just because the state is called "Ready for Test" doesn't mean you shouldn't test your code *before* opening a PR.
+    **Note:** Just because the state is called "Ready for Test" doesn't mean you shouldn't test your code *before* opening a PR.
 7. Push your progress to the remote branch.
    
    ```bash
@@ -56,8 +56,7 @@ Here is how you should begin working on any task or bug fix.
 ## General info about creating tasks and stories
 * Anyone can create a story or task, and anyone can assign a task to another user.
 * For example, if you work primarily on the back-end and you discover a UI bug, 
-  you should create a new task within the relevant story (or create a new story), 
-  and assign it to whomever is responsible for the UI.
+  you should create a new task within the relevant story and assign it to whomever is responsible for the UI.
 * Ideally we'll always put new stories in the backlog, and each week or two we will take
   some stories out of the backlog and work on them. We should try to avoid creating new stories 
   after we've already decided what to work on for the week (or two), but it's not terrible if it happens.
