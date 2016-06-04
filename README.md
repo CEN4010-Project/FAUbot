@@ -24,20 +24,26 @@ Here is how you should begin working on any task or bug fix.
 
 4. On your very first commit, your commit message may include the Taiga command to move your story/task to a new state,
     
-    `git commit -m "TG-2 #in-progress This is a unique description of what I did in this commmit"`
+    ```bash
+	git commit -m "TG-2 #in-progress This is a unique description of what I did in this commmit"
+	```
    
     This will take the Taiga item with ID #2 and move it to the "In Progress" state. 
-   You can move it manually and forget the taiga command in your commit message if you wants.
+   You don't have to add the Taiga stuff as long as you move the item manually in Taiga.
 5. Work on your code as normal. Make frequent commits with descriptive commit messages.
 
 6. On your very last commit, you may include the Taiga command to move your task/story to QA (peer review).
    
-    `git commit -m "TG-2 #ready-for-test This is a unique description of my last commit"`
+    ```bash
+	git commit -m "TG-2 #ready-for-test This is a unique description of my last commit"
+	```
    
     Note: Just because the state is called "Ready for Test" doesn't mean you shouldn't test your code *before* opening a PR.
 7. Push your progress to the remote branch.
    
-   `git push origin your-new-branch-name`
+   ```bash
+   git push origin your-new-branch-name
+   ```
 8. On Github, use the UI to navigate to your new branch.
 9. Use the UI to open a new pull request.
 10. Other team members should pull your branch to their own computer and test your code.
