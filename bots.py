@@ -110,7 +110,7 @@ class RedditBot(Bot):
         saved in praw.ini. If a refresh token is not saved for a
         particular account, account_register.py must be run before
         that account can be used for a RedditBot.
-        :return:
+        :return: A Reddit instance with an authenticated user.
         """
         r = praw.Reddit(user_agent=self.USER_AGENT, site_name=self.USER_NAME)
         try:
