@@ -1,7 +1,14 @@
-# README
+# FAUbot
 
-Project installation/user instructions will go here.
-
+To make this run:
+1. Follow the instructions in docstring.io for installing Python.
+2. From the project folder, run `pip install -r requirements.txt`
+3. Copy your `praw_example.ini` file into a new file named `praw.ini`
+4. Log into FAUbot's Reddit account
+5. Follow [these instructions](http://praw.readthedocs.io/en/stable/pages/oauth.html#a-step-by-step-oauth-guide) for finding the client ID and client secret ID on [Reddit's app preferences page.](https://www.reddit.com/prefs/apps/)
+6. `account_register.py` should be run **exactly once**, and the refresh token should be shared among ourselves. This will let the bot sign into Reddit automatically, no matter who is running it.
+7. Verify your refresh token is stored in `praw.ini`.
+8. From the project directory, run `python bots.py`.
 ## Taiga info
 
 * User stories correspond to entire features of the program.

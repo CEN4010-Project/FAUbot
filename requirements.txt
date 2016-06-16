@@ -1,0 +1,6 @@
+boto3==1.3.1
+botocore==1.4.28
+ddt==1.1.0
+praw==3.5.0
+pyaml==15.8.2
+requests==2.10.0
