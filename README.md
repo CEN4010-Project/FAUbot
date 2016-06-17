@@ -1,7 +1,7 @@
 #FAUbot
 
 ###About
-Faubot is an automated program that scrapes data from various FAU-related sources and shares them with the FAU subreddit -- reddit.com/r/FAU.
+Faubot is an automated program that scrapes data from various FAU-related sources and shares them with [the FAU subreddit](https://reddit.com/r/FAU).
 It will benefit the FAU community by providing a convenient forum for discovering and discussing FAU-related news and events.
 
 ####How to Run:
