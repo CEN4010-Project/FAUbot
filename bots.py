@@ -13,6 +13,10 @@ class MissingRefreshTokenError(ValueError):
     pass
 
 
+class InvalidBotClassName(ValueError):
+    pass
+
+
 class Bot(threading.Thread, metaclass=ABCMeta):
     """
     Base class for all bots.
@@ -121,17 +125,31 @@ class RedditBot(Bot):
         return r
 
 
-class ExampleBot(RedditBot):
+class ExampleBot1(RedditBot):
     """
     An example RedditBot to show how simple it is to create new bots.
     Only a constructor and a work function are needed.
     """
     def __init__(self, user_agent=None, user_name=None):
-        super(ExampleBot, self).__init__(user_agent, user_name)
+        super(ExampleBot1, self).__init__(user_agent, user_name)
 
     def work(self):
         me = self.r.get_me()
-        print("ExampleBot working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+        print("ExampleBot1 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+        sleep(2)
+
+
+class ExampleBot2(RedditBot):
+    """
+    An example RedditBot to show how simple it is to create new bots.
+    Only a constructor and a work function are needed.
+    """
+    def __init__(self, user_agent=None, user_name=None):
+        super(ExampleBot2, self).__init__(user_agent, user_name)
+
+    def work(self):
+        me = self.r.get_me()
+        print("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
         sleep(2)
 
 
@@ -147,8 +165,17 @@ class Dispatch(threading.Thread, metaclass=ABCMeta):
         """
         super(Dispatch, self).__init__()
         self.stop = stop_event or threading.Event()
-        self.bots = {sig.username: BOT_CLASSES[sig.classname](user_agent=None, user_name=sig.username)
-                     for sig in bot_signatures}
+        self.bots = {}
+
+        for signature in bot_signatures:
+            if type(signature.classname) is str:
+                self.bots[signature.classname] = [BOT_CLASSES[name](user_agent=signature.useragent, user_name=signature.username)
+                                                  for name in signature.classname.split(",")]
+            elif type(signature.classname) is list and all(type(name) is str for name in signature.classname):
+                self.bots[signature.classname] = [BOT_CLASSES[name](user_agent=signature.useragent, user_name=signature.username)
+                                                  for name in signature.classname]
+            else:
+                raise InvalidBotClassName
 
     def __enter__(self):
         """
@@ -160,7 +187,7 @@ class Dispatch(threading.Thread, metaclass=ABCMeta):
         self.start()
         return self
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Safely closes a Dispatch using a context manager,
         e.g. with Dispatch():
@@ -174,8 +201,9 @@ class Dispatch(threading.Thread, metaclass=ABCMeta):
         Starts the bots, and waits for a stop event.
         :return:
         """
-        for name, bot in self.bots.items():
-            bot.start()
+        for bot_list in self.bots.values():
+            for bot in bot_list:
+                bot.start()
         self.stop.wait()
 
     def join(self, timeout=None):
@@ -185,8 +213,9 @@ class Dispatch(threading.Thread, metaclass=ABCMeta):
         :param timeout: Time to wait before forcefully stopping itself (wait forever if None).
         :return: Original return value of Thread.join()
         """
-        for bot in self.bots.values():
-            bot.join(timeout)
+        for bot_list in self.bots.values():
+            for bot in bot_list:
+                bot.join(timeout)
         self.stop.set()
         return super(Dispatch, self).join(timeout)
 
@@ -212,7 +241,8 @@ class GlobalDispatch(Dispatch):
 BOT_CLASSES = {
     Bot.__name__: Bot,
     RedditBot.__name__: RedditBot,
-    ExampleBot.__name__: ExampleBot
+    ExampleBot1.__name__: ExampleBot1,
+    ExampleBot2.__name__: ExampleBot2
 }
 
 if __name__ == '__main__':
