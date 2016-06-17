@@ -2,14 +2,15 @@
 
 To make this run:
 
-1. Follow the instructions in docstring.io for installing Python.
+1. Install Python 3.5
 2. From the project folder, run `pip install -r requirements.txt`
-3. Copy your `praw_example.ini` file into a new file named `praw.ini`
-4. Log into FAUbot's Reddit account
-5. Follow [these instructions](http://praw.readthedocs.io/en/stable/pages/oauth.html#a-step-by-step-oauth-guide) for finding the client ID and client secret ID on [Reddit's app preferences page.](https://www.reddit.com/prefs/apps/)
-6. Ask your group leader for the refresh token, and paste it in `praw.ini`. This will let the bot sign into Reddit automatically, no matter who is running it.
-7. Verify your refresh token is stored in `praw.ini`.
-8. From the project directory, run `python bots.py`.
+3. If you already have the `praw.ini` file, go to step 8.
+4. Copy your `praw_example.ini` file into a new file named `praw.ini`
+5. Log into FAUbot's Reddit account
+6. Follow [these instructions](http://praw.readthedocs.io/en/stable/pages/oauth.html#a-step-by-step-oauth-guide) for finding the client ID and client secret ID on [Reddit's app preferences page.](https://www.reddit.com/prefs/apps/)
+7. Ask your group leader for the refresh token, and paste it in `praw.ini`. This will let the bot sign into Reddit automatically, no matter who is running it.
+8. Verify your refresh token is stored in `praw.ini`.
+9. From the project directory, run `python bots.py`.
 
 ## Taiga info
 
@@ -53,6 +54,7 @@ Here is how you should begin working on any task or bug fix.
    ```bash
    git push origin your-new-branch-name
    ```
+  
 8. On Github, use the UI to navigate to your new branch.
 9. Use the UI to open a new pull request.
 10. Other team members should pull your branch to their own computer and test your code.
