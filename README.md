@@ -2,13 +2,13 @@
 
 To make this run:
 
-1. Install Python 3.5
-2. From the project folder, run `pip install -r requirements.txt`
+1. Install [Python 3.5](https://www.python.org/downloads/release/python-350/).
+2. From the project folder, run `pip install -r requirements.txt`.
 3. If you already have the `praw.ini` file, go to step 8.
-4. Copy your `praw_example.ini` file into a new file named `praw.ini`
-5. Log into FAUbot's Reddit account
+4. Copy your `praw_example.ini` file into a new file named `praw.ini`.
+5. Log into FAUbot's Reddit account. Ask a group member if you don't have the password.
 6. Follow [these instructions](http://praw.readthedocs.io/en/stable/pages/oauth.html#a-step-by-step-oauth-guide) for finding the client ID and client secret ID on [Reddit's app preferences page.](https://www.reddit.com/prefs/apps/)
-7. Ask your group leader for the refresh token, and paste it in `praw.ini`. This will let the bot sign into Reddit automatically, no matter who is running it.
+7. Ask a group member for the refresh token, and paste it in `praw.ini`. This will let the bot sign into Reddit automatically, no matter who is running it.
 8. Verify your refresh token is stored in `praw.ini`.
 9. From the project directory, run `python bots.py`.
 
