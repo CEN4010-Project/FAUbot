@@ -22,7 +22,7 @@ class Bot(threading.Thread, metaclass=ABCMeta):
     Base class for all bots.
     It is a Thread that will continue to do work until it is told to stop.
     """
-    def __init__(self, user_agent=None, user_name=None, permissions=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Bot, self).__init__(daemon=True)
         self.stop = False
 
@@ -246,10 +246,12 @@ BOT_CLASSES = {
 }
 
 if __name__ == '__main__':
+    print("Starting bots...")
     with GlobalDispatch():
         try:
             while True:
                 sleep(1)
         except KeyboardInterrupt:
             # This doesn't work in the PyCharm run window, but it works in Powershell.
-            pass
+            print("Terminating bots...", end="")
+    print("Done.")
