@@ -254,12 +254,12 @@ BOT_CLASSES = {
 }
 
 if __name__ == '__main__':
-    print("Starting bots...")
+    logger.info("Starting bots...")
     with GlobalDispatch():
         try:
             while True:
                 sleep(1)
         except KeyboardInterrupt:
             # This doesn't work in the PyCharm run window, but it works in Powershell.
-            print("Terminating bots...", end="")
-    print("Done.")
+            logger.info("Terminating bots")
+    logger.info("Bots terminated")
