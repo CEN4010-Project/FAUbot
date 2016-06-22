@@ -15,6 +15,8 @@ It will benefit the FAU community by providing a convenient forum for discoverin
 7. Ask a group member for the refresh token, and paste it in `praw.ini`. This will let the bot sign into Reddit automatically, no matter who is running it.
 8. Verify your refresh token is stored in `praw.ini`.
 9. From the project directory, run `python bots.py`.
+10. (Temporary) You will need to create the file logs/botlog.log before running.
+ This won't be necessary after we make the program create the log file itself.
 
 
 ###Contributing
