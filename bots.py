@@ -1,22 +1,28 @@
-import praw
 import threading
-from time import sleep
-from collections import namedtuple
 from abc import ABCMeta, abstractmethod
+from collections import namedtuple
+from time import sleep
 
+import praw
+
+import config
 from config import praw_config
+
+logger = config.getLogger()
 
 BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
 
 
+# region EXCEPTIONS
 class MissingRefreshTokenError(ValueError):
     pass
 
 
 class InvalidBotClassName(ValueError):
     pass
+# endregion
 
-
+# region BASECLASSES
 class Bot(threading.Thread, metaclass=ABCMeta):
     """
     Base class for all bots.
@@ -123,8 +129,9 @@ class RedditBot(Bot):
             raise MissingRefreshTokenError("No oauth refresh token saved. Please run account_register.py.")
         r.set_access_credentials(**current_access_info)
         return r
+# endregion
 
-
+# region EXAMPLECLASSES
 class ExampleBot1(RedditBot):
     """
     An example RedditBot to show how simple it is to create new bots.
@@ -135,7 +142,7 @@ class ExampleBot1(RedditBot):
 
     def work(self):
         me = self.r.get_me()
-        print("ExampleBot1 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+        logger.info("ExampleBot1 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
         sleep(2)
 
 
@@ -149,10 +156,11 @@ class ExampleBot2(RedditBot):
 
     def work(self):
         me = self.r.get_me()
-        print("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+        logger.info("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
         sleep(2)
+#endregion
 
-
+# region DISPATCH
 class Dispatch(threading.Thread, metaclass=ABCMeta):
     """
     An object used to create, launch, and terminate bots.
@@ -236,7 +244,7 @@ class GlobalDispatch(Dispatch):
                                    permissions=praw_config.get_reddit_oauth_scope(name))
                       for name in praw_config.get_all_site_names()]
         super(GlobalDispatch, self).__init__(signatures, stop_event)
-
+# endregion
 
 BOT_CLASSES = {
     Bot.__name__: Bot,
