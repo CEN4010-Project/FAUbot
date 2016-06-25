@@ -5,11 +5,9 @@ from time import sleep
 
 import praw
 
-import config
-from config import praw_config
+from config import praw_config, getLogger
 
-logger = config.getLogger()
-
+logger = getLogger()
 BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
 
 
@@ -159,6 +157,7 @@ class ExampleBot2(RedditBot):
         logger.info("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
         sleep(2)
 #endregion
+
 
 # region DISPATCH
 class Dispatch(threading.Thread, metaclass=ABCMeta):
