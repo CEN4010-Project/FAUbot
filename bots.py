@@ -7,7 +7,7 @@ import praw
 
 from config import praw_config, getLogger
 
-logger = getLogger()
+logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
 
 
@@ -140,7 +140,22 @@ class ExampleBot1(RedditBot):
 
     def work(self):
         me = self.r.get_me()
+
+        # use logger.info for general messages
         logger.info("ExampleBot1 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+
+        # use logger.warning for warning messages
+        logger.warning("Something weird happened or might happen.")
+
+        # use logger.error for error messages
+        logger.error("An error occurred.")
+
+        try:
+            print(int("asdfadf"))
+        except ValueError:
+            # use logger.exception to include the stack trace (error details) in the error message
+            logger.exception("An exception occurred.")
+
         sleep(2)
 
 
