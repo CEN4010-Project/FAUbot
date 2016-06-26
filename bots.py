@@ -150,10 +150,11 @@ class ExampleBot1(RedditBot):
         # use logger.error for error messages
         logger.error("An error occurred.")
 
+        # use logger.exception to include the stack trace (error details) in the error message
         try:
-            print(int("asdfadf"))
+            this_wont_work = int("asdf")  # raises a ValueError
+            logger.info(this_wont_work)
         except ValueError:
-            # use logger.exception to include the stack trace (error details) in the error message
             logger.exception("An exception occurred.")
 
         sleep(2)
