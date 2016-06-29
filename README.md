@@ -16,7 +16,6 @@ It will benefit the FAU community by providing a convenient forum for discoverin
 8. Verify your refresh token is stored in `praw.ini`.
 9. From the project directory, run `python bots.py`.
 
-
 ###Contributing
 Because this is a group project for a class, we currently accept code changes from group members only.
 Group members should be familiar with Taiga and the workflow listed below.
