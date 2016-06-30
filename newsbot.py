@@ -127,6 +127,24 @@ class NewsBot(RedditBot):
         if not self.is_already_submitted(link_tuple.url):
             self.r.submit(self.subreddit, link_tuple.title, url=link_tuple.url)
 
+    @staticmethod
+    def _get_random_articles(articles):
+        """
+        A private helper function that takes a list of Links and returns a random one.
+        If the list is empty, this function returns None.
+        :type articles: list
+        :param articles: list of Links
+        :return: a random Link
+        """
+        if len(articles) > 1:
+            random_index = randint(0, len(articles))
+            article = articles[random_index-1]
+        elif articles:
+            article = articles[0]
+        else:
+            article = None
+        return article
+
     def get_random_article_from_today(self):
         articles = self.get_articles_from_today()
         return NewsBot._get_random_articles(articles)
@@ -138,17 +156,6 @@ class NewsBot(RedditBot):
     def get_random_article_by_category(self, category, subcategory=None):
         articles = self.get_articles_by_category(category, subcategory)
         return NewsBot._get_random_articles(articles)
-
-    @staticmethod
-    def _get_random_articles(articles):
-        if len(articles) > 1:
-            random_index = randint(0, len(articles))
-            article = articles[random_index-1]
-        elif articles:
-            article = articles[0]
-        else:
-            article = None
-        return article
 
     def work(self):
         logger.info("Getting random article.")

@@ -174,6 +174,7 @@ class ExampleBot2(RedditBot):
     """
     def __init__(self, user_agent=None, user_name=None):
         super(ExampleBot2, self).__init__(user_agent, user_name)
+
     def work(self):
         me = self.r.get_me()
         logger.info("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))

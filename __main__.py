@@ -2,12 +2,15 @@ import threading
 from abc import ABCMeta
 from time import sleep
 
+
 import newsbot  # you must import your bot file here, even if you don't use it
 import config
 from config import praw_config
 from bots import InvalidBotClassName, BotSignature, RedditBot
 
 
+# If you declare your own RedditBot subclass in its own file,
+# you must import it or else it will not be added to BOT_CLASSES.
 BOT_CLASSES = {cls.__name__: cls for cls in RedditBot.get_subclasses()}
 
 logger = config.getLogger()
@@ -99,7 +102,8 @@ class GlobalDispatch(Dispatch):
         super(GlobalDispatch, self).__init__(signatures, stop_event)
 # endregion
 
-if __name__ == '__main__':
+
+def main(args=None):
     logger.info("Starting bots")
     with GlobalDispatch():
         try:
@@ -108,3 +112,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             logger.info("Terminating bots")
     logger.info("Program closed")
+
+
+if __name__ == '__main__':
+    main()
