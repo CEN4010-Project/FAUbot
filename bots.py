@@ -277,3 +277,5 @@ if __name__ == '__main__':
             # This doesn't work in the PyCharm run window, but it works in Powershell.
             logger.info("Terminating bots")
     logger.info("Bots terminated")
+
+#TEST!!!
