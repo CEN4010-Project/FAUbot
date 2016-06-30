@@ -1,22 +1,26 @@
-import praw
 import threading
-from time import sleep
-from collections import namedtuple
 from abc import ABCMeta, abstractmethod
+from collections import namedtuple
+from time import sleep
 
-from config import praw_config
+import praw
 
+from config import praw_config, getLogger
+
+logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
 
 
+# region EXCEPTIONS
 class MissingRefreshTokenError(ValueError):
     pass
 
 
 class InvalidBotClassName(ValueError):
     pass
+# endregion
 
-
+# region BASECLASSES
 class Bot(threading.Thread, metaclass=ABCMeta):
     """
     Base class for all bots.
@@ -123,8 +127,9 @@ class RedditBot(Bot):
             raise MissingRefreshTokenError("No oauth refresh token saved. Please run account_register.py.")
         r.set_access_credentials(**current_access_info)
         return r
+# endregion
 
-
+# region EXAMPLECLASSES
 class ExampleBot1(RedditBot):
     """
     An example RedditBot to show how simple it is to create new bots.
@@ -135,7 +140,23 @@ class ExampleBot1(RedditBot):
 
     def work(self):
         me = self.r.get_me()
-        print("ExampleBot1 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+
+        # use logger.info for general messages
+        logger.info("ExampleBot1 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+
+        # use logger.warning for warning messages
+        logger.warning("Something weird happened or might happen.")
+
+        # use logger.error for error messages
+        logger.error("An error occurred.")
+
+        # use logger.exception to include the stack trace (error details) in the error message
+        try:
+            this_wont_work = int("asdf")  # raises a ValueError
+            logger.info(this_wont_work)
+        except ValueError:
+            logger.exception("An exception occurred.")
+
         sleep(2)
 
 
@@ -146,13 +167,14 @@ class ExampleBot2(RedditBot):
     """
     def __init__(self, user_agent=None, user_name=None):
         super(ExampleBot2, self).__init__(user_agent, user_name)
-
     def work(self):
         me = self.r.get_me()
-        print("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
+        logger.info("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
         sleep(2)
+#endregion
 
 
+# region DISPATCH
 class Dispatch(threading.Thread, metaclass=ABCMeta):
     """
     An object used to create, launch, and terminate bots.
@@ -236,7 +258,7 @@ class GlobalDispatch(Dispatch):
                                    permissions=praw_config.get_reddit_oauth_scope(name))
                       for name in praw_config.get_all_site_names()]
         super(GlobalDispatch, self).__init__(signatures, stop_event)
-
+# endregion
 
 BOT_CLASSES = {
     Bot.__name__: Bot,
@@ -246,12 +268,14 @@ BOT_CLASSES = {
 }
 
 if __name__ == '__main__':
-    print("Starting bots...")
+    logger.info("Starting bots...")
     with GlobalDispatch():
         try:
             while True:
                 sleep(1)
         except KeyboardInterrupt:
             # This doesn't work in the PyCharm run window, but it works in Powershell.
-            print("Terminating bots...", end="")
-    print("Done.")
+            logger.info("Terminating bots")
+    logger.info("Bots terminated")
+
+#TEST!!!
