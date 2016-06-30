@@ -2,9 +2,13 @@ import requests
 import datetime
 from collections import namedtuple
 from bs4 import BeautifulSoup
+from random import randint
+from time import sleep
 
+from config import getLogger
 from bots import RedditBot
 
+logger = getLogger()
 Link = namedtuple('Link', 'url title')
 """
 A namedtuple is just a regular tuple, e.g. (2, 'a', 5), which is an iterable container that is immutable,
@@ -123,7 +127,39 @@ class NewsBot(RedditBot):
         if not self.is_already_submitted(link_tuple.url):
             self.r.submit(self.subreddit, link_tuple.title, url=link_tuple.url)
 
+    def get_random_article_from_today(self):
+        articles = self.get_articles_from_today()
+        return NewsBot._get_random_articles(articles)
+
+    def get_random_article_by_date(self, year, month=None, day=None):
+        articles = self.get_articles_by_date(year, month, day)
+        return NewsBot._get_random_articles(articles)
+
+    def get_random_article_by_category(self, category, subcategory=None):
+        articles = self.get_articles_by_category(category, subcategory)
+        return NewsBot._get_random_articles(articles)
+
+    @staticmethod
+    def _get_random_articles(articles):
+        if len(articles) > 1:
+            random_index = randint(0, len(articles))
+            article = articles[random_index-1]
+        elif articles:
+            article = articles[0]
+        else:
+            article = None
+        return article
+
     def work(self):
-        sports = self.get_articles_by_category("reviews", "books")
-        first_link = sports[0]
-        print(first_link)
+        logger.info("Getting random article.")
+        article = self.get_random_article_by_date(2016, 2)
+        if article and not self.is_already_submitted(article.url):
+            logger.info("Submitting link.")
+            self.submit_link(article)
+            logger.info("Link submitted successfully.")
+        elif article:
+            logger.info("Link is already submitted.")
+        else:
+            logger.info("No links to submit.")
+        logger.info("Sleeping...")
+        sleep(10)
