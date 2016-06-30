@@ -9,11 +9,24 @@ import os
 
 
 Link = namedtuple('Link', 'url title')
+"""
+A namedtuple is just a regular tuple, e.g. (2, 'a', 5), which is an iterable container that is immutable,
+meaning you cannot change a value in it or add/remove values to/from it.
+
+The difference between a regular tuple and a namedtuple is that each value in a namedtuple has its own name. It's
+just an easy way to refer to the values in the tuple.
+
+The 'Link' namedtuple looks like this Link(url="www.example.com/article/1", title="This is the title")
+It has two values. The first is the link's URL, and the second is the title of the web page.
+
+So instead of having to use Link[0] for the URL and Link[1] for the title, I can say Link.url and Link.title
+"""
 
 
 def clean_dir(obj):
     """
     When you want to call dir() on something but don't want to see any private attributes/methods.
+    This is just a helper function used to figure out what attributes/methods an object has.
     :param obj: The thing to call dir() on, e.g. dir(obj)
     :return: A list of public methods and/or attributes of the object.
     """
@@ -21,11 +34,10 @@ def clean_dir(obj):
 
 
 class NewsBot(RedditBot):
-    def __init__(self, stop_event):
+    def __init__(self, *args, **kwargs):
         super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
         self.base_url = "http://www.upressonline.com"
         self.subreddit = "FAUbot"
-        self.stop_event = stop_event
 
     def is_already_submitted(self, url):
         """
@@ -97,7 +109,12 @@ class NewsBot(RedditBot):
         r = requests.get(url)
         if r.status_code == requests.codes.ok:
             soup = BeautifulSoup(r.content, 'html.parser')
-            return [Link(url=link['href'], title=link.get_text()) for link in soup.find_all(rel='bookmark')]
+            link_list = []
+            for link in soup.find_all(rel='bookmark'):
+                url = link['href']
+                title = link.get_text().replace("“", '"').replace("”", '"')
+                link_list.append(Link(url=url, title=title))
+            return link_list
         else:
             raise ValueError("Invalid Url: {}    HTTP status code: {}".format(url, r.status_code))
 
@@ -111,14 +128,9 @@ class NewsBot(RedditBot):
 
     def work(self):
         sports = self.get_articles_by_category("reviews", "books")
-        for link in sports:
-            print("url:", link.url, "title:", link.title)
-        print("Stopping self")
-        self.stop = True
+        first_link = sports[0]
+        print(first_link)
 
-    def run(self):
-        super(NewsBot, self).run()
-        self.stop_event.set()
 
 if __name__ == '__main__':
     event = Event()
