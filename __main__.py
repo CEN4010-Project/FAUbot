@@ -1,15 +1,10 @@
-import os
-
-print(os.getcwd())
 import threading
-from abc import ABCMeta, abstractmethod
-import bots
-import newsbot
-from bots import InvalidBotClassName, BotSignature, RedditBot
+from abc import ABCMeta
+from time import sleep
+
 import config
 from config import praw_config
-from newsbot import NewsBot
-from time import sleep
+from bots import InvalidBotClassName, BotSignature, RedditBot
 
 
 BOT_CLASSES = {cls.__name__: cls for cls in RedditBot.get_subclasses()}

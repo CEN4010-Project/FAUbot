@@ -1,12 +1,9 @@
-from bs4 import BeautifulSoup
 import requests
-from bots import RedditBot
 import datetime
 from collections import namedtuple
-from time import sleep
-from threading import Event
-import os
+from bs4 import BeautifulSoup
 
+from bots import RedditBot
 
 Link = namedtuple('Link', 'url title')
 """
@@ -130,11 +127,3 @@ class NewsBot(RedditBot):
         sports = self.get_articles_by_category("reviews", "books")
         first_link = sports[0]
         print(first_link)
-
-
-if __name__ == '__main__':
-    event = Event()
-    bot = NewsBot(event)
-    bot.start()
-    event.wait()
-    print("Script end.")

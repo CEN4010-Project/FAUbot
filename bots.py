@@ -1,11 +1,10 @@
 import threading
+import praw
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from time import sleep
 
-import praw
-
-from config import praw_config, getLogger
+from config import getLogger
 
 logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
@@ -135,6 +134,7 @@ class RedditBot(Bot):
         r.set_access_credentials(**current_access_info)
         return r
 # endregion
+
 
 # region EXAMPLECLASSES
 class ExampleBot1(RedditBot):
