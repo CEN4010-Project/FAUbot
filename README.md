@@ -14,7 +14,7 @@ It will benefit the FAU community by providing a convenient forum for discoverin
 6. Follow [these instructions](http://praw.readthedocs.io/en/stable/pages/oauth.html#a-step-by-step-oauth-guide) for finding the client ID and client secret ID on [Reddit's app preferences page.](https://www.reddit.com/prefs/apps/)
 7. Ask a group member for the refresh token, and paste it in `praw.ini`. This will let the bot sign into Reddit automatically, no matter who is running it.
 8. Verify your refresh token is stored in `praw.ini`.
-9. From the project directory, run `python bots.py`.
+9. From the project directory, run `python .`. That is the 'python' command, a space, and a period.
 
 ###Contributing
 Because this is a group project for a class, we currently accept code changes from group members only.
