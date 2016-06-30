@@ -2,6 +2,7 @@ import threading
 from abc import ABCMeta
 from time import sleep
 
+import newsbot  # you must import your bot file here, even if you don't use it
 import config
 from config import praw_config
 from bots import InvalidBotClassName, BotSignature, RedditBot
