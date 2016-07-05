@@ -3,13 +3,11 @@ import datetime
 from collections import namedtuple
 from bs4 import BeautifulSoup
 from random import randint
-from time import sleep
 import boto3
 import boto3.dynamodb
 from config import getLogger
 from config.bot_config import CONFIG
 from bots import RedditBot
-
 
 # region constants
 UTC_TIMESTAMP_FORMAT = CONFIG['formats']['utc_timestamp']
@@ -51,6 +49,7 @@ class NewsBot(RedditBot):
         super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
         self.base_url = "http://www.upressonline.com"
         self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
+        self.submission_table = self._get_submission_table()
         self._populate_table_if_needed()
 
     @staticmethod
@@ -66,10 +65,9 @@ class NewsBot(RedditBot):
         """
         Check if the bot has an existing record in the submission history table, and create one if needed.
         """
-        table = self._get_submission_table()
-        if not self.get_submission_record(table):
+        if not self.get_submission_record():
             logger.info("No submission record found. Creating a new one.")
-            table.put_item(
+            self.submission_table.put_item(
                 Item={'bot_name': NewsBot.__name__}
             )
 
@@ -212,42 +210,38 @@ class NewsBot(RedditBot):
         articles = self.get_articles_by_category(category, subcategory)
         return NewsBot._get_random_articles(articles)
 
-    def set_last_submission_time(self, table=None):
+    def set_last_submission_time(self):
         """
         Helper function that saves the current time as the last_submission_time in the database.
         :type table: boto3.Table
         :param table: An instance of the submission table in DynamoDB, or None.
         """
-        table = table or self._get_submission_table()
         now = datetime.datetime.utcnow()
         time_stamp = now.strftime(UTC_TIMESTAMP_FORMAT)
-        table.update_item(
+        self.submission_table.update_item(
             Key={'bot_name': self.__class__.__name__},
             UpdateExpression='SET last_submission_time = :val1',
             ExpressionAttributeValues={':val1': time_stamp}
         )
 
-    def get_last_submission_time(self, table=None):
+    def get_last_submission_time(self):
         """
         Helper function to look in the database for the last time the bot submitted a link.
-        :param table: An instance of the submission table in DynamoDB, or None.
         :return: A UTC timestamp string representing the last submission time.
         """
-        submission_record = self.get_submission_record(table)
+        submission_record = self.get_submission_record()
         try:
             return submission_record['last_submission_time']
         except (TypeError, KeyError):
             return None
 
-    def get_submission_record(self, table=None):
+    def get_submission_record(self):
         """
         Helper function to look in the database for the bot's entire record. This currently includes
         the username, the last submission time, and some metadata.
-        :param table: An instance of the submission table in DynamoDB, or None.
         :return: A dictionary
         """
-        table = table or self._get_submission_table()
-        response = table.get_item(
+        response = self.submission_table.get_item(
             Key={'bot_name': self.__class__.__name__}
         )
         try:
@@ -255,14 +249,14 @@ class NewsBot(RedditBot):
         except KeyError:
             return None
 
-    def is_time_to_submit(self, submission_table=None):
+    def is_time_to_submit(self):
         """
         Check whether enough time has passed between now and the last submission time.
         :param submission_table: An instance of the submission table in DynamoDB, or None.
         :return: True if the amount of time between now and the last submission time is greater than or equal to some
                  time interval defined in the config file.
         """
-        last_submission_time = datetime.datetime.strptime(self.get_last_submission_time(submission_table), UTC_TIMESTAMP_FORMAT)
+        last_submission_time = datetime.datetime.strptime(self.get_last_submission_time(), UTC_TIMESTAMP_FORMAT)
         target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
         return datetime.datetime.utcnow() - last_submission_time >= target_interval
 
@@ -271,14 +265,18 @@ class NewsBot(RedditBot):
         Check if enough time has passed since the last submission, and if so, submit a new link and save the current
         submission time. This is the NewsBot's main logic function.
         """
-        table = self._get_submission_table()
-        if self.is_time_to_submit(table):
+        logger.info("Getting table.")
+        logger.info("Checking if time to submit.")
+        if self.is_time_to_submit():
             logger.info("Time to submit.")
             article = self.get_random_article_by_date(2016, 2)  # for now, get from a month with plenty of articles
+            logger.info("Submitting link.")
             self.submit_link(article)
-            self.set_last_submission_time(table)
+            logger.info("Setting last sub time.")
+            self.set_last_submission_time()
         else:
             logger.info("Not time to submit. Sleeping...")
 
     def work(self):
+        logger.info("Working.")
         self.do_scheduled_submit()
