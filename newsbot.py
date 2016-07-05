@@ -4,7 +4,8 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from random import randint
 from time import sleep
-
+import boto3
+import boto3.dynamodb
 from config import getLogger
 from bots import RedditBot
 
@@ -39,6 +40,17 @@ class NewsBot(RedditBot):
         super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
         self.base_url = "http://www.upressonline.com"
         self.subreddit = "FAUbot"
+        self.submission_table = NewsBot._get_submission_table()
+        if not self.get_submission_record():
+            logger.info("No submission record found. Creating a new one.")
+            self.submission_table.put_item(
+                Item={'bot_name': NewsBot.__name__}
+            )
+
+    @staticmethod
+    def _get_submission_table():
+        db = boto3.resource('dynamodb', region_name='us-east-1')
+        return db.Table('bot_submission_history')
 
     def is_already_submitted(self, url):
         """
@@ -157,8 +169,34 @@ class NewsBot(RedditBot):
         articles = self.get_articles_by_category(category, subcategory)
         return NewsBot._get_random_articles(articles)
 
+    def set_last_submission_time(self):
+        now = datetime.datetime.utcnow()
+        time_stamp = now.strftime("%Y-%m-%d %H:%M:%S")
+        self.submission_table.update_item(
+            Key={'bot_name': self.__class__.__name__},
+            UpdateExpression='SET last_submission_time = :val1',
+            ExpressionAttributeValues={':val1': time_stamp}
+        )
+
+    def get_last_submission_time(self):
+        submission_record = self.get_submission_record()
+        try:
+            return submission_record['last_submission_time']
+        except (TypeError, KeyError):
+            return None
+
+    def get_submission_record(self):
+        response = self.submission_table.get_item(
+            Key={'bot_name': self.__class__.__name__}
+        )
+        try:
+            return response['Item']
+        except KeyError:
+            return None
+
+
     def work(self):
-        logger.info("Getting random article.")
+        '''logger.info("Getting random article.")
         article = self.get_random_article_by_date(2016, 2)
         if article and not self.is_already_submitted(article.url):
             logger.info("Submitting link.")
@@ -169,4 +207,11 @@ class NewsBot(RedditBot):
         else:
             logger.info("No links to submit.")
         logger.info("Sleeping...")
-        sleep(10)
+        sleep(10)'''
+        last_time = self.get_last_submission_time()
+        if not last_time:
+            logger.info("No submission time found. Setting now.")
+            self.set_last_submission_time()
+        else:
+            logger.info("Submission time: {}".format(last_time))
+        sleep(5)
