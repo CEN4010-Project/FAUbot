@@ -41,7 +41,7 @@ class NewsBot(RedditBot):
     def __init__(self, *args, **kwargs):
         super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
         self.base_url = "http://www.upressonline.com"
-        self.subreddit = "FAUbot"
+        self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
         self.submission_table = NewsBot._get_submission_table()
         if not self.get_submission_record():
             logger.info("No submission record found. Creating a new one.")
@@ -54,16 +54,17 @@ class NewsBot(RedditBot):
         db = boto3.resource('dynamodb', region_name='us-east-1')
         return db.Table('bot_submission_history')
 
-    def is_already_submitted(self, url):
+    def is_already_submitted(self, url, subreddit):
         """
         Checks if a URL has already been shared on self.subreddit.
         Because praw.Reddit.search returns a generator instead of a list,
         we have to actually loop through it to see if the post exists.
         If no post exists, the loop won't happen and it will return False.
         :param url: The url that will be searched for
+        :param subreddit: The subreddit where the url will be searched for
         :return: True if the url has already been posted to the subreddit
         """
-        for link in self.r.search("url:"+url, subreddit=self.subreddit):
+        for link in self.r.search("url:"+url, subreddit=subreddit):
             if link:
                 return True
         return False
@@ -138,8 +139,9 @@ class NewsBot(RedditBot):
         Submit a link to Reddit.
         :param link_tuple: A namedtuple with a url and a title.
         """
-        if not self.is_already_submitted(link_tuple.url):
-            self.r.submit(self.subreddit, link_tuple.title, url=link_tuple.url)
+        for subreddit in self.subreddits:
+            if not self.is_already_submitted(link_tuple.url, subreddit):
+                self.r.submit(subreddit, link_tuple.title, url=link_tuple.url)
 
     @staticmethod
     def _get_random_articles(articles):
