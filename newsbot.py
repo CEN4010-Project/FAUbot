@@ -164,7 +164,7 @@ class NewsBot(RedditBot):
                 logger.info("Link already submitted. subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
 
     @staticmethod
-    def _get_random_articles(articles):
+    def _get_random_article(articles):
         """
         A private helper function that takes a list of Links and returns a random one.
         If the list is empty, this function returns None.
@@ -179,6 +179,9 @@ class NewsBot(RedditBot):
             article = articles[0]
         else:
             article = None
+        msg = "Random article: url=[{}], title=[{}]".format(article.url, article.title) if article \
+            else "Empty list provided. Returning None."
+        logger.info(msg)
         return article
 
     def get_random_article_from_today(self):
@@ -187,7 +190,7 @@ class NewsBot(RedditBot):
         :return: A Link representing a random article that was published on the current day.
         """
         articles = self.get_articles_from_today()
-        return NewsBot._get_random_articles(articles)
+        return NewsBot._get_random_article(articles)
 
     def get_random_article_by_date(self, year, month=None, day=None):
         """
@@ -198,7 +201,7 @@ class NewsBot(RedditBot):
         :return: A Link representing a random article that was published on a certain date.
         """
         articles = self.get_articles_by_date(year, month, day)
-        return NewsBot._get_random_articles(articles)
+        return NewsBot._get_random_article(articles)
 
     def get_random_article_by_category(self, category, subcategory=None):
         """
@@ -208,7 +211,7 @@ class NewsBot(RedditBot):
         :return: A Link representing a random article that was published in a certain category.
         """
         articles = self.get_articles_by_category(category, subcategory)
-        return NewsBot._get_random_articles(articles)
+        return NewsBot._get_random_article(articles)
 
     def set_last_submission_time(self):
         """
@@ -218,6 +221,7 @@ class NewsBot(RedditBot):
         """
         now = datetime.datetime.utcnow()
         time_stamp = now.strftime(UTC_TIMESTAMP_FORMAT)
+        logger.info("Setting last submission time: {}".format(time_stamp))
         self.submission_table.update_item(
             Key={'bot_name': self.__class__.__name__},
             UpdateExpression='SET last_submission_time = :val1',
@@ -231,8 +235,14 @@ class NewsBot(RedditBot):
         """
         submission_record = self.get_submission_record()
         try:
+            logger.info("Retrieved last submission time: {}".format(submission_record['last_submission_time']))
             return submission_record['last_submission_time']
-        except (TypeError, KeyError):
+        except KeyError:
+            logger.info("No submission time recorded. Returning None.")
+            return None
+        except TypeError:
+            logger.warning("No record found. Creating if needed.")
+            self._populate_table_if_needed()
             return None
 
     def get_submission_record(self):
@@ -265,18 +275,13 @@ class NewsBot(RedditBot):
         Check if enough time has passed since the last submission, and if so, submit a new link and save the current
         submission time. This is the NewsBot's main logic function.
         """
-        logger.info("Getting table.")
-        logger.info("Checking if time to submit.")
         if self.is_time_to_submit():
-            logger.info("Time to submit.")
+            logger.info("Time to submit article.")
             article = self.get_random_article_by_date(2016, 2)  # for now, get from a month with plenty of articles
-            logger.info("Submitting link.")
             self.submit_link(article)
-            logger.info("Setting last sub time.")
             self.set_last_submission_time()
         else:
             logger.info("Not time to submit. Sleeping...")
 
     def work(self):
-        logger.info("Working.")
         self.do_scheduled_submit()
