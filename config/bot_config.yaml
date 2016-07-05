@@ -2,3 +2,5 @@ formats:
     utc_timestamp: "%Y-%m-%d %H:%M:%S"
 intervals:
     submission_interval_hours: 24
+subreddits:
+    - FAUbot
