@@ -10,6 +10,13 @@ from config import getLogger
 from config.bot_config import CONFIG
 from bots import RedditBot
 
+
+# region constants
+UTC_TIMESTAMP_FORMAT = CONFIG['formats']['utc_timestamp']
+SUBMISSION_INTERVAL_HOURS = CONFIG['intervals']['submission_interval_hours']
+# endregion
+
+# region globals
 logger = getLogger()
 Link = namedtuple('Link', 'url title')
 """
@@ -24,9 +31,10 @@ It has two values. The first is the link's URL, and the second is the title of t
 
 So instead of having to use Link[0] for the URL and Link[1] for the title, I can say Link.url and Link.title
 """
+# endregion
 
-UTC_TIMESTAMP_FORMAT = CONFIG['formats']['utc_timestamp']
 
+# region helpers
 def clean_dir(obj):
     """
     When you want to call dir() on something but don't want to see any private attributes/methods.
@@ -35,6 +43,7 @@ def clean_dir(obj):
     :return: A list of public methods and/or attributes of the object.
     """
     return [d for d in dir(obj) if not d.startswith('_') and not d.endswith('_')]
+# endregion
 
 
 class NewsBot(RedditBot):
@@ -42,17 +51,20 @@ class NewsBot(RedditBot):
         super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
         self.base_url = "http://www.upressonline.com"
         self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
-        self.submission_table = NewsBot._get_submission_table()
-        if not self.get_submission_record():
-            logger.info("No submission record found. Creating a new one.")
-            self.submission_table.put_item(
-                Item={'bot_name': NewsBot.__name__}
-            )
+        self._populate_table_if_needed()
 
     @staticmethod
     def _get_submission_table():
         db = boto3.resource('dynamodb', region_name='us-east-1')
         return db.Table('bot_submission_history')
+
+    def _populate_table_if_needed(self):
+        table = self._get_submission_table()
+        if not self.get_submission_record(table):
+            logger.info("No submission record found. Creating a new one.")
+            table.put_item(
+                Item={'bot_name': NewsBot.__name__}
+            )
 
     def is_already_submitted(self, url, subreddit):
         """
@@ -136,12 +148,15 @@ class NewsBot(RedditBot):
 
     def submit_link(self, link_tuple):
         """
-        Submit a link to Reddit.
+        Submit a link to Reddit, and save the submission time to the database.
         :param link_tuple: A namedtuple with a url and a title.
         """
         for subreddit in self.subreddits:
             if not self.is_already_submitted(link_tuple.url, subreddit):
+                logger.info("Submitting link. subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
                 self.r.submit(subreddit, link_tuple.title, url=link_tuple.url)
+            else:
+                logger.info("Link already submitted. subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
 
     @staticmethod
     def _get_random_articles(articles):
@@ -173,24 +188,26 @@ class NewsBot(RedditBot):
         articles = self.get_articles_by_category(category, subcategory)
         return NewsBot._get_random_articles(articles)
 
-    def set_last_submission_time(self):
+    def set_last_submission_time(self, table=None):
+        table = table or self._get_submission_table()
         now = datetime.datetime.utcnow()
         time_stamp = now.strftime(UTC_TIMESTAMP_FORMAT)
-        self.submission_table.update_item(
+        table.update_item(
             Key={'bot_name': self.__class__.__name__},
             UpdateExpression='SET last_submission_time = :val1',
             ExpressionAttributeValues={':val1': time_stamp}
         )
 
-    def get_last_submission_time(self):
-        submission_record = self.get_submission_record()
+    def get_last_submission_time(self, table=None):
+        submission_record = self.get_submission_record(table)
         try:
             return submission_record['last_submission_time']
         except (TypeError, KeyError):
             return None
 
-    def get_submission_record(self):
-        response = self.submission_table.get_item(
+    def get_submission_record(self, table=None):
+        table = table or self._get_submission_table()
+        response = table.get_item(
             Key={'bot_name': self.__class__.__name__}
         )
         try:
@@ -198,24 +215,20 @@ class NewsBot(RedditBot):
         except KeyError:
             return None
 
+    def is_time_to_submit(self, submission_table=None):
+        last_submission_time = datetime.datetime.strptime(self.get_last_submission_time(submission_table), UTC_TIMESTAMP_FORMAT)
+        target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
+        return datetime.datetime.utcnow() - last_submission_time >= target_interval
+
+    def do_scheduled_submit(self):
+        table = self._get_submission_table()
+        if self.is_time_to_submit(table):
+            logger.info("Time to submit.")
+            article = self.get_random_article_by_date(2016, 2)  # for now, get from a month with plenty of articles
+            self.submit_link(article)
+            self.set_last_submission_time(table)
+        else:
+            logger.info("Not time to submit. Sleeping...")
 
     def work(self):
-        '''logger.info("Getting random article.")
-        article = self.get_random_article_by_date(2016, 2)
-        if article and not self.is_already_submitted(article.url):
-            logger.info("Submitting link.")
-            self.submit_link(article)
-            logger.info("Link submitted successfully.")
-        elif article:
-            logger.info("Link is already submitted.")
-        else:
-            logger.info("No links to submit.")
-        logger.info("Sleeping...")
-        sleep(10)'''
-        last_time = self.get_last_submission_time()
-        if not last_time:
-            logger.info("No submission time found. Setting now.")
-            self.set_last_submission_time()
-        else:
-            logger.info("Submission time: {}".format(last_time))
-        sleep(5)
+        self.do_scheduled_submit()
