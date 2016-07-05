@@ -5,10 +5,12 @@ from collections import namedtuple
 from time import sleep
 
 from config import getLogger
+from config.bot_config import CONFIG
 
 logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
 
+SLEEP_INTERVAL = CONFIG['intervals']['sleep_interval_seconds']
 
 # region EXCEPTIONS
 class MissingRefreshTokenError(ValueError):
@@ -28,7 +30,7 @@ class Bot(threading.Thread, metaclass=ABCMeta):
     """
     def __init__(self, *args, **kwargs):
         super(Bot, self).__init__(daemon=True)
-        self.stop = False
+        self.stop_event = threading.Event()
 
     @abstractmethod
     def work(self):
@@ -46,8 +48,10 @@ class Bot(threading.Thread, metaclass=ABCMeta):
         method is invoked. This function repeatedly calls self.work()
         until something tells it to stop.
         """
-        while not self.stop:
+        while not self.stop_event.is_set():
             self.work()
+            self.stop_event.wait(SLEEP_INTERVAL)
+        logger.info("Bot closing.")
 
     def join(self, timeout=None):
         """
@@ -56,7 +60,7 @@ class Bot(threading.Thread, metaclass=ABCMeta):
         :param timeout: How long the Bot should wait before forcefully closing itself (wait forever if None).
         :return: The original return value of Thread.join()
         """
-        self.stop = True
+        self.stop_event.set()
         return super(Bot, self).join(timeout)
 
 
