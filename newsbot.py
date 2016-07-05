@@ -7,6 +7,7 @@ from time import sleep
 import boto3
 import boto3.dynamodb
 from config import getLogger
+from config.bot_config import CONFIG
 from bots import RedditBot
 
 logger = getLogger()
@@ -24,6 +25,7 @@ It has two values. The first is the link's URL, and the second is the title of t
 So instead of having to use Link[0] for the URL and Link[1] for the title, I can say Link.url and Link.title
 """
 
+UTC_TIMESTAMP_FORMAT = CONFIG['formats']['utc_timestamp']
 
 def clean_dir(obj):
     """
@@ -171,7 +173,7 @@ class NewsBot(RedditBot):
 
     def set_last_submission_time(self):
         now = datetime.datetime.utcnow()
-        time_stamp = now.strftime("%Y-%m-%d %H:%M:%S")
+        time_stamp = now.strftime(UTC_TIMESTAMP_FORMAT)
         self.submission_table.update_item(
             Key={'bot_name': self.__class__.__name__},
             UpdateExpression='SET last_submission_time = :val1',
