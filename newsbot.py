@@ -315,7 +315,7 @@ class NewsBot(RedditBot):
         """
         if self.is_time_to_submit():
             logger.info("Time to submit article.")
-            article = self.get_random_article_by_date(2015, 10)
+            article = self.get_random_article_from_today()
             if article:
                 self.submit_link(article)
                 self.set_last_submission_time()
