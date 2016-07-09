@@ -51,8 +51,9 @@ class NewsBot(RedditBot):
         super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
         self.base_url = "http://www.upressonline.com"
         self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
-        self.submission_table = self._get_submission_table()
-        self._populate_table_if_needed()
+        self._submission_table = self._get_submission_table()
+        self.last_submission_time = self.get_last_submission_time()
+        self._first_submission_time = self.last_submission_time
 
     @staticmethod
     def _get_submission_table():
@@ -63,17 +64,22 @@ class NewsBot(RedditBot):
         db = boto3.resource('dynamodb', region_name='us-east-1')
         return db.Table('bot_submission_history')
 
+    def _put_first_record(self):
+        record = {'bot_name': NewsBot.__name__}
+        logger.info("Saving record to database: {}".format(record))
+        self._submission_table.put_item(
+            Item=record
+        )
+
     def _populate_table_if_needed(self):
         """
         Check if the bot has an existing record in the submission history table, and create one if needed.
         """
+        logger.info("Checking if submission record exists for {}".format(self.__class__.__name__))
         if not self.get_submission_record():
             logger.info("No submission record found. Creating a new one.")
-            self.submission_table.put_item(
-                Item={'bot_name': NewsBot.__name__}
-            )
 
-    @ttl_cache(maxsize=100, ttl=86400)
+    @ttl_cache(ttl=86400)
     def is_already_submitted(self, url, subreddit):
         """
         Checks if a URL has already been shared on self.subreddit.
@@ -108,7 +114,7 @@ class NewsBot(RedditBot):
         url = "{}/category/{}".format(self.base_url, category_name)
         if category_subname:
             url = "{}/{}".format(url, category_subname)
-        return NewsBot._get_link_list(url)
+        return self._get_link_list(url)
 
     def get_articles_by_date(self, year, month=None, day=None):
         """
@@ -131,10 +137,10 @@ class NewsBot(RedditBot):
                 url = "{}/{:02}".format(url, day)
         elif day:
             raise ValueError("Cannot specify day without month.")
-        return NewsBot._get_link_list(url)
-
-    @staticmethod
-    def _get_link_list(url):
+        return self._get_link_list(url)
+    
+    @ttl_cache(ttl=600)  # cache for 10 minutes todo configurable ttl
+    def _get_link_list(self, url):
         """
         Parses a web page's HTML for links with a particular attribute (rel=bookmark),
         which are assumed to be links to articles on the school paper's website.
@@ -142,17 +148,20 @@ class NewsBot(RedditBot):
         :raises ValueError if the HTTP response is anything but 200 OK.
         :return: A list of Links (namedtuples)
         """
+        link_list = []
         r = requests.get(url)
         if r.status_code == requests.codes.ok:
             soup = BeautifulSoup(r.content, 'html.parser')
-            link_list = []
             for link in soup.find_all(rel='bookmark'):
                 url = link['href']
                 title = link.get_text().replace("“", '"').replace("”", '"')
                 link_list.append(Link(url=url, title=title))
             return link_list
+        elif r.status_code == requests.codes.not_found:
+            logger.info("No links found: url=[{}], code=[{}]".format(url, r.status_code))
+            return link_list
         else:
-            raise ValueError("Invalid Url: {}    HTTP status code: {}".format(url, r.status_code))
+            raise ValueError("Error talking to UPress: url=[{}], code=[{}]".format(url, r.status_code))
 
     def submit_link(self, link_tuple):
         """
@@ -160,11 +169,11 @@ class NewsBot(RedditBot):
         :param link_tuple: A namedtuple with a url and a title.
         """
         for subreddit in self.subreddits:
-            if not self.is_already_submitted(link_tuple.url, subreddit):
-                logger.info("Submitting link. subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
-                self.r.submit(subreddit, link_tuple.title, url=link_tuple.url)
+            if self.is_already_submitted(link_tuple.url, subreddit):
+                logger.info("Link already submitted: subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
             else:
-                logger.info("Link already submitted. subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
+                logger.info("Submitting link: subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
+                self.r.submit(subreddit, link_tuple.title, url=link_tuple.url)
 
     @staticmethod
     def _get_random_article(articles):
@@ -216,16 +225,31 @@ class NewsBot(RedditBot):
         articles = self.get_articles_by_category(category, subcategory)
         return NewsBot._get_random_article(articles)
 
-    def set_last_submission_time(self):
+    def set_last_submission_time(self, submission_dt=None):
         """
-        Helper function that saves the current time as the last_submission_time in the database.
+        Helper function that saves the current time to memory.
+        :param submission_dt: A datetime object that will be saved to self.last_submission_time.
+                              If None, the current UTC time will be used.
         """
-        now = datetime.datetime.utcnow().isoformat()
-        logger.info("Setting last submission time: {}".format(now))
-        self.submission_table.update_item(
+        self.last_submission_time = submission_dt or datetime.datetime.utcnow()
+        if type(self.last_submission_time) is not datetime.datetime:
+            msg = "Invalid type for self.last_submission_time: {}".format(type(self.last_submission_time))
+            logger.error(msg)
+            logger.warning("Setting self.last_submission_time to None")
+            self.last_submission_time = None
+            raise ValueError(msg)
+
+    def _put_last_submission_time(self):
+        """
+        Helper function to save the last submission time to the database.
+        :return:
+        """
+        last_submission_time = self.last_submission_time.isoformat()
+        logger.info("Saving submission time to the database: time=[{}]".format(self.last_submission_time))
+        self._submission_table.update_item(
             Key={'bot_name': self.__class__.__name__},
             UpdateExpression='SET last_submission_time = :val1',
-            ExpressionAttributeValues={':val1': now}
+            ExpressionAttributeValues={':val1': last_submission_time}
         )
 
     def get_last_submission_time(self):
@@ -236,16 +260,15 @@ class NewsBot(RedditBot):
         submission_record = self.get_submission_record()
         try:
             logger.info("Retrieved last submission time: {}".format(submission_record['last_submission_time']))
-            return submission_record['last_submission_time']
+            return dateutil.parser.parse(submission_record['last_submission_time'])
         except KeyError:
-            logger.info("No submission time recorded. Returning None.")
+            logger.warning("No submission time recorded. Returning None.")
             return None
         except TypeError:
-            logger.warning("No record found. Creating if needed.")
-            self._populate_table_if_needed()
+            logger.warning("No record found. Creating one now.")
+            self._put_first_record()
             return None
 
-    @ttl_cache(ttl=60*60*6)
     def get_submission_record(self):
         """
         Helper function to look in the database for the bot's entire record. This currently includes
@@ -253,7 +276,7 @@ class NewsBot(RedditBot):
         is cached for 6 hours to reduce the number of database calls.
         :return: A dictionary
         """
-        response = self.submission_table.get_item(
+        response = self._submission_table.get_item(
             Key={'bot_name': self.__class__.__name__}
         )
         try:
@@ -268,9 +291,22 @@ class NewsBot(RedditBot):
         :return: True if the amount of time between now and the last submission time is greater than or equal to some
                  time interval defined in the config file.
         """
-        last_submission_time = dateutil.parser.parse(self.get_last_submission_time())
-        target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
-        return datetime.datetime.utcnow() - last_submission_time >= target_interval
+        is_time = True
+        if self.last_submission_time:
+            target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
+            is_time = datetime.datetime.utcnow() - self.last_submission_time >= target_interval
+        return is_time
+
+    def join(self, timeout=None):
+        """
+        Override of the parent class's join() function. This ensures that the last submission time
+        saved in memory gets put into the database before the bot terminates.
+        :param timeout: Same as threading.Thread.join's timeout parameter.
+        :return: The return value of RedditBot.join()
+        """
+        if self.last_submission_time != self._first_submission_time:
+            self._put_last_submission_time()
+        return super(NewsBot, self).join(timeout)
 
     def do_scheduled_submit(self):
         """
@@ -279,9 +315,12 @@ class NewsBot(RedditBot):
         """
         if self.is_time_to_submit():
             logger.info("Time to submit article.")
-            article = self.get_random_article_by_date(2016, 2)  # for now, get from a month with plenty of articles
-            self.submit_link(article)
-            self.set_last_submission_time()
+            article = self.get_random_article_by_date(2015, 10)
+            if article:
+                self.submit_link(article)
+                self.set_last_submission_time()
+            else:
+                logger.info("No articles have been published yet today.")
         else:
             logger.info("Not time to submit. Sleeping...")
 
