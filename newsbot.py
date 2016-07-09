@@ -1,5 +1,7 @@
 import requests
 import datetime
+import dateutil.parser
+from cachetools import ttl_cache
 from collections import namedtuple
 from bs4 import BeautifulSoup
 from random import randint
@@ -10,8 +12,8 @@ from config.bot_config import CONFIG
 from bots import RedditBot
 
 # region constants
-UTC_TIMESTAMP_FORMAT = CONFIG['formats']['utc_timestamp']
 SUBMISSION_INTERVAL_HOURS = CONFIG['intervals']['submission_interval_hours']
+SUBREDDITS = CONFIG['subreddits']
 # endregion
 
 # region globals
@@ -71,6 +73,7 @@ class NewsBot(RedditBot):
                 Item={'bot_name': NewsBot.__name__}
             )
 
+    @ttl_cache(maxsize=100, ttl=86400)
     def is_already_submitted(self, url, subreddit):
         """
         Checks if a URL has already been shared on self.subreddit.
@@ -216,16 +219,13 @@ class NewsBot(RedditBot):
     def set_last_submission_time(self):
         """
         Helper function that saves the current time as the last_submission_time in the database.
-        :type table: boto3.Table
-        :param table: An instance of the submission table in DynamoDB, or None.
         """
-        now = datetime.datetime.utcnow()
-        time_stamp = now.strftime(UTC_TIMESTAMP_FORMAT)
-        logger.info("Setting last submission time: {}".format(time_stamp))
+        now = datetime.datetime.utcnow().isoformat()
+        logger.info("Setting last submission time: {}".format(now))
         self.submission_table.update_item(
             Key={'bot_name': self.__class__.__name__},
             UpdateExpression='SET last_submission_time = :val1',
-            ExpressionAttributeValues={':val1': time_stamp}
+            ExpressionAttributeValues={':val1': now}
         )
 
     def get_last_submission_time(self):
@@ -245,10 +245,12 @@ class NewsBot(RedditBot):
             self._populate_table_if_needed()
             return None
 
+    @ttl_cache(ttl=60*60*6)
     def get_submission_record(self):
         """
         Helper function to look in the database for the bot's entire record. This currently includes
-        the username, the last submission time, and some metadata.
+        the username, the last submission time, and some metadata. The return value of this function
+        is cached for 6 hours to reduce the number of database calls.
         :return: A dictionary
         """
         response = self.submission_table.get_item(
@@ -266,7 +268,7 @@ class NewsBot(RedditBot):
         :return: True if the amount of time between now and the last submission time is greater than or equal to some
                  time interval defined in the config file.
         """
-        last_submission_time = datetime.datetime.strptime(self.get_last_submission_time(), UTC_TIMESTAMP_FORMAT)
+        last_submission_time = dateutil.parser.parse(self.get_last_submission_time())
         target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
         return datetime.datetime.utcnow() - last_submission_time >= target_interval
 
