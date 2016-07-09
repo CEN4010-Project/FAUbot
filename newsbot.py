@@ -75,14 +75,6 @@ class NewsBot(RedditBot):
             Item=record
         )
 
-    def _populate_table_if_needed(self):
-        """
-        Check if the bot has an existing record in the submission history table, and create one if needed.
-        """
-        logger.info("Checking if submission record exists for {}".format(self.__class__.__name__))
-        if not self.get_submission_record():
-            logger.info("No submission record found. Creating a new one.")
-
     @ttl_cache(ttl=86400)
     def is_already_submitted(self, url, subreddit):
         """
