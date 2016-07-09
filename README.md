@@ -9,7 +9,7 @@ It will benefit the FAU community by providing a convenient forum for discoverin
 1. Install [Python 3.5](https://www.python.org/downloads/release/python-350/).
 2. [Add Python to your Path environment variable](http://stackoverflow.com/a/17176423), replacing `C:\Python27` with the location where you installed Python (most likely `C:\Python35`).
 3. From the project folder, run `python -m pip install -r requirements.txt`.
-4. If you already have the `praw.ini` file, go to step 8.
+4. If you already have the `praw.ini` file, go to step 9.
 5. Copy your `praw_example.ini` file into a new file named `praw.ini`.
 6. Log into FAUbot's Reddit account. Ask a group member if you don't have the password.
 7. Follow [these instructions](http://praw.readthedocs.io/en/stable/pages/oauth.html#a-step-by-step-oauth-guide) for finding the client ID and client secret ID on [Reddit's app preferences page.](https://www.reddit.com/prefs/apps/)
