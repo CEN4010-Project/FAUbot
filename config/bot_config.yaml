@@ -3,3 +3,8 @@ intervals:
     sleep_interval_seconds: 300
 subreddits:
     - FAUbot
+user_agents:
+    debug: &debug "/u/FAUbot prototyping a Reddit bot class"
+    ExampleBot1: *debug
+    ExampleBot2: *debug
+    NewsBot: "/u/FAUbot submitting links from upressonline.com"

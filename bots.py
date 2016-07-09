@@ -5,10 +5,10 @@ from collections import namedtuple
 from time import sleep
 
 from config import getLogger
-from config.bot_config import CONFIG
+from config.bot_config import CONFIG, get_user_agent
 
 logger = getLogger()  # you will need this to use logger functions
-BotSignature = namedtuple('BotSignature', 'classname username useragent permissions')
+BotSignature = namedtuple('BotSignature', 'classname username permissions')
 
 SLEEP_INTERVAL = CONFIG['intervals']['sleep_interval_seconds']
 
@@ -73,7 +73,7 @@ class RedditBot(Bot):
 
     debug_user_agent_template = '/u/{username} prototyping an automated reddit user'
 
-    def __init__(self, user_agent=None, user_name=None, *args, **kwargs):
+    def __init__(self, user_name=None, *args, **kwargs):
         """
         Initializes a Reddit bot.
         :param user_agent: A string passed to Reddit that identifies the Bot.
@@ -81,7 +81,7 @@ class RedditBot(Bot):
         """
         super(RedditBot, self).__init__()
         self.USER_NAME = user_name or 'FAUbot'
-        self.USER_AGENT = user_agent or RedditBot.debug_user_agent_template.format(username=self.USER_NAME)
+        self.USER_AGENT = get_user_agent(self.__class__.__name__)
         self.r = None  # the praw.Reddit instance
 
     @abstractmethod
@@ -130,6 +130,7 @@ class RedditBot(Bot):
         that account can be used for a RedditBot.
         :return: A Reddit instance with an authenticated user.
         """
+        logger.info("Logging into Reddit: username=[{}], useragent=[{}]".format(self.USER_NAME, self.USER_AGENT))
         r = praw.Reddit(user_agent=self.USER_AGENT, site_name=self.USER_NAME)
         try:
             current_access_info = r.refresh_access_information()

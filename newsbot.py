@@ -47,8 +47,8 @@ def clean_dir(obj):
 
 
 class NewsBot(RedditBot):
-    def __init__(self, *args, **kwargs):
-        super(NewsBot, self).__init__(user_agent="/r/FAUbot posting FAU news to Reddit", user_name="FAUbot")
+    def __init__(self, user_name, *args, **kwargs):
+        super(NewsBot, self).__init__(user_name=user_name)
         self.base_url = "http://www.upressonline.com"
         self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
         self._submission_table = self._get_submission_table()

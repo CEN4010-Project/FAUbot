@@ -5,7 +5,7 @@ from time import sleep
 
 import newsbot  # you must import your bot file here, even if you don't use it
 import config
-from config import praw_config
+from config import praw_config, bot_config
 from bots import InvalidBotClassName, BotSignature, RedditBot
 
 
@@ -33,10 +33,10 @@ class Dispatch(threading.Thread, metaclass=ABCMeta):
 
         for signature in bot_signatures:
             if type(signature.classname) is str:
-                self.bots[signature.classname] = [BOT_CLASSES[name](user_agent=signature.useragent, user_name=signature.username)
+                self.bots[signature.classname] = [BOT_CLASSES[name](user_name=signature.username)
                                                   for name in signature.classname.split(",")]
             elif type(signature.classname) is list and all(type(name) is str for name in signature.classname):
-                self.bots[signature.classname] = [BOT_CLASSES[name](user_agent=signature.useragent, user_name=signature.username)
+                self.bots[signature.classname] = [BOT_CLASSES[name](user_name=signature.username)
                                                   for name in signature.classname]
             else:
                 raise InvalidBotClassName
@@ -96,7 +96,6 @@ class GlobalDispatch(Dispatch):
         """
         signatures = [BotSignature(classname=praw_config.get_bot_class_name(name),
                                    username=name,
-                                   useragent=RedditBot.debug_user_agent_template.format(username=name),  # todo no debug
                                    permissions=praw_config.get_reddit_oauth_scope(name))
                       for name in praw_config.get_all_site_names()]
         super(GlobalDispatch, self).__init__(signatures, stop_event)
