@@ -65,6 +65,10 @@ class NewsBot(RedditBot):
         return db.Table('bot_submission_history')
 
     def _put_first_record(self):
+        """
+        Put the bot's name in the database. This should be done when no record exists for the bot, and it should only
+        have to be run once.
+        """
         record = {'bot_name': NewsBot.__name__}
         logger.info("Saving record to database: {}".format(record))
         self._submission_table.put_item(
@@ -241,7 +245,8 @@ class NewsBot(RedditBot):
 
     def _put_last_submission_time(self):
         """
-        Helper function to save the last submission time to the database.
+        Convert the last submission datetime into a timestamp string and save it to the database.
+        This should only have to be run right before the bot terminates.
         :return:
         """
         last_submission_time = self.last_submission_time.isoformat()
@@ -272,8 +277,7 @@ class NewsBot(RedditBot):
     def get_submission_record(self):
         """
         Helper function to look in the database for the bot's entire record. This currently includes
-        the username, the last submission time, and some metadata. The return value of this function
-        is cached for 6 hours to reduce the number of database calls.
+        the username, the last submission time, and some metadata.
         :return: A dictionary
         """
         response = self._submission_table.get_item(
@@ -287,7 +291,6 @@ class NewsBot(RedditBot):
     def is_time_to_submit(self):
         """
         Check whether enough time has passed between now and the last submission time.
-        :param submission_table: An instance of the submission table in DynamoDB, or None.
         :return: True if the amount of time between now and the last submission time is greater than or equal to some
                  time interval defined in the config file.
         """
@@ -310,7 +313,7 @@ class NewsBot(RedditBot):
 
     def do_scheduled_submit(self):
         """
-        Check if enough time has passed since the last submission, and if so, submit a new link and save the current
+        Check if enough time has passed since the last submission. If it has, submit a new link and save the current
         submission time. This is the NewsBot's main logic function.
         """
         if self.is_time_to_submit():
