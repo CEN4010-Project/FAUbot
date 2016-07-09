@@ -66,10 +66,11 @@ Here is how you should begin working on any task or bug fix.
 	```
    
     **Note:** Just because the state is called "Ready for Test" doesn't mean you shouldn't test your code *before* opening a PR.
+
 7. Push your progress to the remote branch.
-   ```bash
-   git push origin your-new-branch-name
-   ```
+
+    `git push origin your-new-branch-name`
+   
 8. On Github, use the UI to navigate to your new branch.
 9. Use the UI to open a new pull request.
 10. Other team members should pull your branch to their own computer and test your code.
