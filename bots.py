@@ -169,7 +169,6 @@ class ExampleBot1(RedditBot):
         except ValueError:
             logger.exception("An exception occurred.")
 
-        sleep(2)
 
 
 class ExampleBot2(RedditBot):
@@ -183,5 +182,4 @@ class ExampleBot2(RedditBot):
     def work(self):
         me = self.r.get_me()
         logger.info("ExampleBot2 working...Username: {}  Link karma: {}".format(me.name, me.link_karma))
-        sleep(2)
 #endregion
