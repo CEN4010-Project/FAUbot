@@ -252,7 +252,7 @@ class NewsBot(RedditBot):
     def get_last_submission_time(self):
         """
         Helper function to look in the database for the last time the bot submitted a link.
-        :return: A UTC timestamp string representing the last submission time.
+        :return: A datetime object representing the last submission time in UTC time.
         """
         submission_record = self.get_submission_record()
         try:
