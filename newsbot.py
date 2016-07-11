@@ -216,7 +216,7 @@ class NewsBot(RedditBot):
         This function checks the creation time of FAUbot's newest submissions. If at least 24 hours has passed since the
         last article submission, it is time to submit a new article. The 24 hour interval is configurable in
         config/bot_config.yaml.
-        :return:
+        :return: True if enough time has passed for a new article to be submitted.
         """
         is_time = True
         me = self.r.get_me()
