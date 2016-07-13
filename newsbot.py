@@ -201,7 +201,6 @@ class NewsBot(RedditBot):
         submission time. This is the NewsBot's main logic function.
         """
         if self.is_time_to_submit():
-            logger.info("Time to submit article.")
             article = self.get_random_article_by_date(2016, 1)
             if article:
                 self.submit_link(article)
@@ -228,9 +227,12 @@ class NewsBot(RedditBot):
                 created = datetime.datetime.utcfromtimestamp(post.created_utc)
                 difference = now - created
                 if difference < target_interval:
-                    logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], difference=[{:5.2f} hrs]".format(now, created, (difference.seconds/60)/60))
+                    logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], "
+                                "difference=[{:5.2f} hrs]".format(now, created, (difference.seconds/60)/60))
                     is_time = False
                     break
+        else:
+            logger.info("Time to submit article. currentTime=[{}]".format(now))
         return is_time
 
     def work(self):
