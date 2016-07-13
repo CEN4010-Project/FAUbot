@@ -10,7 +10,9 @@ from config.bot_config import CONFIG, get_user_agent
 logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username permissions')
 
-SLEEP_INTERVAL = CONFIG['intervals']['sleep_interval_seconds']
+DEFAULT_SLEEP_INTERVAL = CONFIG['intervals']['sleep_interval_seconds']
+RUN_BOTS_ONCE = CONFIG['flags']['run_bots_once']
+
 
 # region EXCEPTIONS
 class MissingRefreshTokenError(ValueError):
@@ -28,9 +30,12 @@ class Bot(threading.Thread, metaclass=ABCMeta):
     Base class for all bots.
     It is a Thread that will continue to do work until it is told to stop.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, reset_sleep_interval=True, run_once=False, *args, **kwargs):
         super(Bot, self).__init__(daemon=True)
         self.stop_event = threading.Event()
+        self.sleep_interval = DEFAULT_SLEEP_INTERVAL
+        self._reset_sleep_interval = reset_sleep_interval
+        self._run_once = RUN_BOTS_ONCE or run_once
 
     @abstractmethod
     def work(self):
@@ -49,9 +54,13 @@ class Bot(threading.Thread, metaclass=ABCMeta):
         until something tells it to stop.
         """
         while not self.stop_event.is_set():
+            if self._reset_sleep_interval:
+                self.sleep_interval = DEFAULT_SLEEP_INTERVAL
             self.work()
-            self.stop_event.wait(SLEEP_INTERVAL)
-        logger.info("Bot closing.")
+            if self._run_once:
+                self.stop_event.set()
+            else:
+                self.stop_event.wait(self.sleep_interval)
 
     def join(self, timeout=None):
         """
@@ -79,7 +88,7 @@ class RedditBot(Bot):
         :param user_agent: A string passed to Reddit that identifies the Bot.
         :param user_name: A Reddit username that the RedditBot will use.
         """
-        super(RedditBot, self).__init__()
+        super(RedditBot, self).__init__(*args, **kwargs)
         self.USER_NAME = user_name or 'FAUbot'
         self.USER_AGENT = get_user_agent(self.__class__.__name__)
         self.r = None  # the praw.Reddit instance
