@@ -45,7 +45,7 @@ def clean_dir(obj):
 
 class NewsBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
-        super(NewsBot, self).__init__(user_name=user_name)
+        super(NewsBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = "http://www.upressonline.com"
         self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
 
@@ -141,6 +141,8 @@ class NewsBot(RedditBot):
         for subreddit in self.subreddits:
             if self.is_already_submitted(link_tuple.url, subreddit):
                 logger.info("Link already submitted: subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
+                # sleep for shorter time if time to submit but random article was already submitted
+                self.sleep_interval = 5
             else:
                 logger.info("Submitting link: subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
                 self.r.submit(subreddit, link_tuple.title, url=link_tuple.url)
