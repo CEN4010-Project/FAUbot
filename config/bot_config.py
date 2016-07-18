@@ -27,6 +27,13 @@ def get_flag(flag_name):
     return get_flags()[flag_name]
 
 
+def should_run_once():
+    try:
+        return get_flag('should_run_bots_once')
+    except KeyError:
+        return False
+
+
 def get_intervals():
     return CONFIG['intervals']
 
