@@ -1,8 +1,7 @@
 intervals:
     submission_interval_hours: 24
     sleep_interval_seconds: 300
-subreddits:
-    - FAUbot
+
 user_agents:
     debug: &debug "/u/FAUbot prototyping a Reddit bot class"
     ExampleBot1: *debug
