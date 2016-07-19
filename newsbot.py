@@ -47,6 +47,8 @@ class NewsBot(RedditBot):
         super(NewsBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = "http://www.upressonline.com"
         self.subreddits = get_subreddits()
+        self._last_created = None
+
 
     @ttl_cache(ttl=86400)
     def is_already_submitted(self, url, subreddit):
@@ -145,6 +147,7 @@ class NewsBot(RedditBot):
             else:
                 logger.info("Submitting link: subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
                 self.r.submit(subreddit, link_tuple.title, url=link_tuple.url)
+                self._last_created = datetime.datetime.utcnow()
 
     @staticmethod
     def _get_random_article(articles):
@@ -202,13 +205,21 @@ class NewsBot(RedditBot):
         submission time. This is the NewsBot's main logic function.
         """
         if self.is_time_to_submit():
-            article = self.get_random_article_by_date(2016, 1)
+            article = self.get_random_article_by_date(2014, 9)
             if article:
                 self.submit_link(article)
             else:
                 logger.info("No articles have been published yet today.")
         else:
             logger.info("Not time to submit.")
+
+    def _check_difference(self, now, last, target_interval):
+        difference = now - last
+        if difference < target_interval:
+            logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], "
+                                "difference=[{:5.2f} hrs]".format(now, last, (difference.seconds/60)/60))
+            return False
+        return True
 
     def is_time_to_submit(self):
         """
@@ -223,16 +234,17 @@ class NewsBot(RedditBot):
         now = datetime.datetime.utcnow()
         target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
         logger.info("Checking if time to submit: targetInterval=[{}]".format(target_interval))
-        for post in me.get_submitted(sort="new", time="day"):
-            if post.url.startswith(self.base_url):
-                created = datetime.datetime.utcfromtimestamp(post.created_utc)
-                difference = now - created
-                if difference < target_interval:
-                    logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], "
-                                "difference=[{:5.2f} hrs]".format(now, created, (difference.seconds/60)/60))
-                    is_time = False
-                    break
+
+        if self._last_created:
+            is_time = self._check_difference(now, self._last_created, target_interval)
         else:
+            for post in me.get_submitted(sort="new", time="day"):
+                if post.url.startswith(self.base_url):
+                    created = datetime.datetime.utcfromtimestamp(post.created_utc)
+                    if not self._check_difference(now, created, target_interval):
+                        is_time = False
+                        break
+        if is_time:
             logger.info("Time to submit article. currentTime=[{}]".format(now))
         return is_time
 
