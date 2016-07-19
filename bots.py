@@ -5,7 +5,7 @@ from collections import namedtuple
 from time import sleep
 
 from config import getLogger
-from config.bot_config import CONFIG, get_user_agent
+from config.bot_config import CONFIG, get_user_agent, get_subreddits
 
 logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username permissions')
@@ -91,6 +91,7 @@ class RedditBot(Bot):
         super(RedditBot, self).__init__(*args, **kwargs)
         self.USER_NAME = user_name or 'FAUbot'
         self.USER_AGENT = get_user_agent(self.__class__.__name__)
+        self.subreddits = get_subreddits()
         self.r = None  # the praw.Reddit instance
 
     @abstractmethod
