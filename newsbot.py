@@ -5,12 +5,11 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from random import randint
 from config import getLogger
-from config.bot_config import CONFIG
+from config.bot_config import get_interval, get_subreddits
 from bots import RedditBot
 
 # region constants
-SUBMISSION_INTERVAL_HOURS = CONFIG['intervals']['submission_interval_hours']
-SUBREDDITS = CONFIG['subreddits']
+SUBMISSION_INTERVAL_HOURS = get_interval('submission_interval_hours')
 # endregion
 
 # region globals
@@ -47,7 +46,7 @@ class NewsBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
         super(NewsBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = "http://www.upressonline.com"
-        self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
+        self.subreddits = get_subreddits()
 
     @ttl_cache(ttl=86400)
     def is_already_submitted(self, url, subreddit):
