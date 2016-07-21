@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import requests
 import json
 
+from bots import RedditBot
+
 BASE_URL = "http://www.upressonline.com/fauevents/"
 TABLE_ROW = "{title} | {date} | {description}\n"
 HEADER_DIVIDER = "---|---|----\n"
@@ -69,6 +71,16 @@ def get_reddit_table():
     else:
         logger.error("Table could not be generated.")
     return table
+
+
+class EventBot(RedditBot):
+    def __init__(self, user_name, *args, **kwargs):
+        super().__init__(user_name, *args, **kwargs)
+        self.base_url = BASE_URL
+
+    def work(self):
+        table = get_reddit_table()
+        print(table)
 
 
 def main():
