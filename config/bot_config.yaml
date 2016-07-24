@@ -8,5 +8,6 @@ user_agents:
     ExampleBot1: *debug
     ExampleBot2: *debug
     NewsBot: "/u/FAUbot submitting links from upressonline.com"
+    EventBot: "/u/FAUbot creating a live FAU event calendar in a self post"
 flags:
     run_bots_once: False

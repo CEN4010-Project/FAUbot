@@ -1,6 +1,5 @@
 from config import getLogger
 from bs4 import BeautifulSoup
-from dateutil import parser
 import requests
 import datetime
 import json
@@ -11,16 +10,26 @@ from bots import RedditBot
 
 BASE_URL = "http://www.upressonline.com/fauevents/"
 TABLE_ROW = "{title} | {date} | {description}\n"
+HYPERLINK = "[{text}]({url})"
 HEADER_DIVIDER = "---|---|----\n"
 TABLE_HEADER = TABLE_ROW.format(title='Title', date='Date', description='Description') + HEADER_DIVIDER
 logger = getLogger()
 
 
+"""
+To use string formatting on the HYPERLINK template, you have to use keyword arguments, e.g.
+
+link = HYPERLINK.format(text="Click Me", url="http://example.com")
+
+This will let you put links inside your Reddit posts.
+"""
+
 class EventBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
-        super(EventBot, self).__init__(user_name = user_name, *args, **kwargs)
+        super(EventBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = BASE_URL
 
+    @staticmethod
     def has_event_passed(timestamp):
         full_date = timestamp.replace(" @ ", " ")
         dash_idx = full_date.index('-')
@@ -29,8 +38,8 @@ class EventBot(RedditBot):
         now = utc.localize(datetime.datetime.utcnow())  # get current time in UTC timezone
         return now > start_datetime  # True if now is after start time
 
-
-    def _get_event_html(self):
+    @staticmethod
+    def _get_event_html():
         """
         Makes the HTTP request to the event calendar website.
         :return: String containing HTML, or None if the response is not 200 OK.
@@ -43,6 +52,7 @@ class EventBot(RedditBot):
         logger.warning("Returning None, Response not OK: code={}".format(r.status_code))
         return None
 
+    @staticmethod
     def _get_event_dict(event_json):
         """
         Takes the relevant values out of the event JSON and creates a simpler dictionary
@@ -56,6 +66,7 @@ class EventBot(RedditBot):
                 'date': event_dict['dateDisplay'],
                 'description': event_dict['permalink'] or "None provided"}
 
+    @staticmethod
     def _make_reddit_table(html):
         """
         Scrapes event data from HTML and creates a Reddit table with it.
@@ -91,8 +102,9 @@ class EventBot(RedditBot):
         table = self.get_reddit_table()
         print(table)
 
+
 def main():
-    test = EventBot(RedditBot)
+    test = EventBot(RedditBot, run_once=True)  # the bot will only do one loop if you set that to True
     table = test.get_reddit_table()
     print(table)
 
@@ -121,7 +133,3 @@ if __name__ == '__main__':
 #     if has_event_passed(timestamp) is False:
 #         print(fmt.format(i, event_dict['title'], event_dict['dateDisplay'], event_dict['permalink']))
 #         i += 1
-
-
-
-
