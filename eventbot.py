@@ -24,6 +24,7 @@ link = HYPERLINK.format(text="Click Me", url="http://example.com")
 This will let you put links inside your Reddit posts.
 """
 
+
 class EventBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
         super(EventBot, self).__init__(user_name=user_name, *args, **kwargs)
@@ -81,7 +82,7 @@ class EventBot(RedditBot):
         soup = BeautifulSoup(html, "html.parser")
         for event in soup.find_all('div', attrs={'data-tribejson': True}):
             event_json = event.get('data-tribejson')
-            event_dict = html._get_event_dict(event_json)
+            event_dict = EventBot._get_event_dict(event_json)
             table += TABLE_ROW.format(**event_dict)
         return table
 
@@ -93,7 +94,7 @@ class EventBot(RedditBot):
         table = None
         html = self._get_event_html()
         if html:
-            table = self._make_reddit_table(html)
+            table = EventBot._make_reddit_table(html)
         else:
             logger.error("Table could not be generated.")
         return table
