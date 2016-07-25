@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from config import getLogger
 from bs4 import BeautifulSoup
 import requests
@@ -6,7 +8,15 @@ import json
 from pytz import timezone, utc
 from dateutil.parser import parse
 from bots import RedditBot
+from config.bot_config import CONFIG
 
+
+# region constants
+SUBMISSION_INTERVAL_HOURS = CONFIG['intervals']['submission_interval_hours']
+SUBREDDITS = CONFIG['subreddits']
+# endregion
+
+title = namedtuple('title', 'date')
 
 BASE_URL = "http://www.upressonline.com/fauevents/"
 TABLE_ROW = "{title} | {date} | {description}\n"
@@ -29,9 +39,12 @@ class EventBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
         super(EventBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = BASE_URL
+        self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
 
     @staticmethod
-    def has_event_passed(timestamp):
+    def has_event_passed(event_json):
+        event_dict = EventBot._get_event_dict(event_json)
+        timestamp = event_dict['date']
         full_date = timestamp.replace(" @ ", " ")
         dash_idx = full_date.index('-')
         date = full_date[:dash_idx - 1]
@@ -63,9 +76,9 @@ class EventBot(RedditBot):
         :return: A dict containing the relevant event data
         """
         event_dict = json.loads(event_json)
-        return {'title': event_dict['title'],
+        return {'title': HYPERLINK.format(text=event_dict['title'], url=event_dict['permalink']),
                 'date': event_dict['dateDisplay'],
-                'description': event_dict['permalink'] or "None provided"}
+                'description': event_dict['excerpt'][3:-4] or "None provided",}
 
     @staticmethod
     def _make_reddit_table(html):
@@ -83,7 +96,8 @@ class EventBot(RedditBot):
         for event in soup.find_all('div', attrs={'data-tribejson': True}):
             event_json = event.get('data-tribejson')
             event_dict = EventBot._get_event_dict(event_json)
-            table += TABLE_ROW.format(**event_dict)
+            if EventBot.has_event_passed(event_json) is False:
+                table += TABLE_ROW.format(**event_dict)
         return table
 
     def get_reddit_table(self):
@@ -99,38 +113,104 @@ class EventBot(RedditBot):
             logger.error("Table could not be generated.")
         return table
 
+    def is_already_submitted(self, title, subreddit):
+        """
+        Checks if a URL has already been shared on self.subreddit.
+        Because praw.Reddit.search returns a generator instead of a list,
+        we have to actually loop through it to see if the post exists.
+        If no post exists, the loop won't happen and it will return False.
+        :param url: The url that will be searched for
+        :param subreddit: The subreddit where the url will be searched for
+        :return: True if the url has already been posted to the subreddit
+        """
+        for title in self.r.search("title:"+title, subreddit=subreddit):
+            if title:
+                return True
+        return False
+
+    def edit_existing_table(self):
+        html = self._get_event_html()
+        table = self._make_reddit_table(html)
+        return table
+
+    def create_new_table(self):
+        html = self._get_event_html()
+        table = self._make_reddit_table(html)
+        return table
+
+    def submit_table(self, title_tuple):
+        """
+        Submit a link to Reddit, and save the submission time to the database.
+        :param link_tuple: A namedtuple with a url and a title.
+        """
+        for subreddit in self.subreddits:
+            if self.is_already_submitted(title_tuple.title, subreddit):
+                logger.info("Table already submitted: subreddit=[{}], title=[{}]".format(subreddit, title_tuple.title))
+                table = self.edit_exisiting_table()
+                # sleep for shorter time if time to submit but random article was already submitted
+                self.sleep_interval = 5
+                print(table)
+
+            else:
+                logger.info("Submitting link: subreddit=[{}], url=[{}]".format(subreddit, title_tuple.title))
+                self.r.submit(subreddit, title_tuple.title, url=title_tuple.url)
+                table = self.create_new_table()
+                print(table)
+
+
+    def do_scheduled_submit(self,event_json):
+        """
+        Check if enough time has passed since the last submission. If it has, submit a new link and save the current
+        submission time. This is the NewsBot's main logic function.
+        """
+        if self.is_time_to_submit():
+            event_dict = EventBot._get_event_dict(event_json)
+            title = event_dict['title']
+            if title:
+                self.submit_table(title)
+            else:
+                logger.info("No articles have been published yet today.")
+        else:
+            logger.info("Not time to submit.")
+
+    def is_time_to_submit(self):
+        """
+        Check if enough time has passed to submit another article.
+        This function checks the creation time of FAUbot's newest submissions. If at least 24 hours has passed since the
+        last article submission, it is time to submit a new article. The 24 hour interval is configurable in
+        config/bot_config.yaml.
+        :return: True if enough time has passed for a new article to be submitted.
+        """
+        is_time = True
+        me = self.r.get_me()
+        now = datetime.datetime.utcnow()
+        target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
+        logger.info("Checking if time to submit: targetInterval=[{}]".format(target_interval))
+        for post in me.get_submitted(sort="new", time="day"):
+            if post.url.startswith(self.base_url):
+                created = datetime.datetime.utcfromtimestamp(post.created_utc)
+                difference = now - created
+                if difference < target_interval:
+                    logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], "
+                                "difference=[{:5.2f} hrs]".format(now, created, (difference.seconds/60)/60))
+                    is_time = False
+                    break
+        else:
+            logger.info("Time to submit article. currentTime=[{}]".format(now))
+        return is_time
+
+
+
     def work(self):
         table = self.get_reddit_table()
-        print(table)
+        self.submit_table(title)
 
 
 def main():
     test = EventBot(RedditBot, run_once=True)  # the bot will only do one loop if you set that to True
-    table = test.get_reddit_table()
-    print(table)
+    test.work()
+
 
 if __name__ == '__main__':
     main()
 
-
-# for event in soup.find_all('div', attrs={'data-tribejson': True}):
-#     event_json = event.get('data-tribejson')
-#     event_dict = json.loads(event_json)
-#     titles.append(event_dict['title'])
-#     dates.append(event_dict['dateDisplay'])
-#     times.append(event_dict['permalink'])
-#     descriptions.append(event_dict['excerpt'][3:-4])
-#     # the excerpt is still in a <p> tag, so I use string indexing to get only the text inside the tags.
-#
-# #print(titles)
-#
-#
-# #for time in times:
-#     timestamp = event_dict['dateDisplay']
-#     #timestamp = oldstr.replace("@", "")
-#     #print(timestamp)
-#     #dt = parser.parse(timestamp)
-#     # #print(dt)
-#     if has_event_passed(timestamp) is False:
-#         print(fmt.format(i, event_dict['title'], event_dict['dateDisplay'], event_dict['permalink']))
-#         i += 1
