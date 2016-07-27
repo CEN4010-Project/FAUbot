@@ -205,7 +205,9 @@ class NewsBot(RedditBot):
         submission time. This is the NewsBot's main logic function.
         """
         if self.is_time_to_submit():
-            article = self.get_random_article_by_date(2014, 9)
+            # hard coded article date while developing. production bot will get article from current day
+            article = self.get_random_article_by_date(2014, 10)
+            # article = self.get_random_article_from_today()
             if article:
                 self.submit_link(article)
             else:
