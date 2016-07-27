@@ -213,7 +213,8 @@ class NewsBot(RedditBot):
         else:
             logger.info("Not time to submit.")
 
-    def _check_difference(self, now, last, target_interval):
+    @staticmethod
+    def _check_difference(now, last, target_interval):
         difference = now - last
         if difference < target_interval:
             logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], "
