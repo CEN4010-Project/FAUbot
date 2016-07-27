@@ -1,8 +1,6 @@
 import yaml
 import os
-from config import config_directory, getLogger
-
-logger = getLogger()
+from config import config_directory
 
 bot_config_path = os.path.join(config_directory, "bot_config.yaml")
 with open(bot_config_path, "r") as ifile:
@@ -42,4 +40,3 @@ def get_intervals():
 
 def get_interval(interval_name):
     return get_intervals()[interval_name]
-
