@@ -9,8 +9,6 @@ class TicketBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
         super().__init__(user_name, *args, **kwargs)
         self.COMMAND_PATTERN = "!FAUbot (buy|sell) (\d{1,2})"
-        self.MEGATHREAD_TITLE = "Graduation Ticket Megathread"
-        self._megathread_id = None
 
     def work(self):
         logger.info("Getting unread messages")
