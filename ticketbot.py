@@ -1,10 +1,4 @@
 import re
-import requests
-import datetime
-from cachetools import ttl_cache
-from collections import namedtuple
-from bs4 import BeautifulSoup
-from random import randint
 from config import getLogger
 from bots import RedditBot
 
