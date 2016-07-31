@@ -29,9 +29,11 @@ class TicketBot(RedditBot):
                 number = command.groups()[1]
                 logger.info("Command: operation=[{}], number=[{}]".format(operation, number))
                 subject = "FAUbot received your command"
-                reply = """Hello! You have sent me a command.
-                According to the message you sent me, you want to {} {} ticket{}.
-                Right now I'm just a prototype, so I will not process your request.""".format(operation, number, ('s' if int(number) > 1 else ''))
+                reply = """Hello! You have sent me a command. According to the message you sent me, you want to:
+
+`{} {}` ticket{}.
+
+Right now I'm just a prototype, so I will not process your request.""".format(operation, number, ('s' if int(number) > 1 else ''))
                 logger.info("Sending reply to: recipient=[{}]".format(message.author))
                 self.r.send_message(message.author, subject, reply)
                 logger.info("Message sent.")
