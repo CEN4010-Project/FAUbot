@@ -1,9 +1,9 @@
 from collections import namedtuple
-
 from config import getLogger
 from bs4 import BeautifulSoup
 import requests
 import datetime
+import string
 import json
 from pytz import timezone, utc
 from dateutil.parser import parse
@@ -45,12 +45,24 @@ class EventBot(RedditBot):
     def has_event_passed(event_json):
         event_dict = EventBot._get_event_dict(event_json)
         timestamp = event_dict['date']
-        full_date = timestamp.replace(" @ ", " ")
-        dash_idx = full_date.index('-')
-        date = full_date[:dash_idx - 1]
-        start_datetime = timezone("US/Eastern").localize(parse(date), is_dst=None).astimezone(utc)
+        invalidChars = set(string.punctuation)
+        if any(char in invalidChars for char in timestamp):
+            full_date = timestamp.replace(" @ ", " ")
+            dash_idx = full_date.index('-')
+            date = full_date[:dash_idx - 1]
+            start_datetime = timezone("US/Eastern").localize(parse(date), is_dst=None).astimezone(utc)
+        else:
+            date = timestamp
+            start_datetime = timezone("US/Eastern").localize(parse(date), is_dst=None).astimezone(utc)
+
         now = utc.localize(datetime.datetime.utcnow())  # get current time in UTC timezone
         return now > start_datetime  # True if now is after start time
+
+    def get_title(event_json):
+        event_dict = EventBot._get_event_dict(event_json)
+        title = event_dict['title']
+        return title
+
 
     @staticmethod
     def _get_event_html():
@@ -129,86 +141,47 @@ class EventBot(RedditBot):
         return False
 
     def edit_existing_table(self):
-        html = self._get_event_html()
-        table = self._make_reddit_table(html)
-        return table
+        self.create_new_table()
 
     def create_new_table(self):
         html = self._get_event_html()
         table = self._make_reddit_table(html)
         return table
 
-    def submit_table(self, title_tuple):
+    def submit_table(self, title):
         """
         Submit a link to Reddit, and save the submission time to the database.
-        :param link_tuple: A namedtuple with a url and a title.
+        :param title_tuple: A namedtuple with a url and a title.
         """
         for subreddit in self.subreddits:
-            if self.is_already_submitted(title_tuple.title, subreddit):
-                logger.info("Table already submitted: subreddit=[{}], title=[{}]".format(subreddit, title_tuple.title))
+            if self.is_already_submitted(title, subreddit):
+                logger.info("Table already submitted: subreddit=[{}], title=[{}]".format(subreddit, title))
                 table = self.edit_exisiting_table()
-                # sleep for shorter time if time to submit but random article was already submitted
-                self.sleep_interval = 5
+                self.r.submit(subreddit, title, text=table)
                 print(table)
 
             else:
-                logger.info("Submitting link: subreddit=[{}], url=[{}]".format(subreddit, title_tuple.title))
-                self.r.submit(subreddit, title_tuple.title, url=title_tuple.url)
+                logger.info("Submitting Table: subreddit=[{}], title=[{}]".format(subreddit, title))
                 table = self.create_new_table()
+                self.r.submit(subreddit, title, text = table)
                 print(table)
-
-
-    def do_scheduled_submit(self,event_json):
-        """
-        Check if enough time has passed since the last submission. If it has, submit a new link and save the current
-        submission time. This is the NewsBot's main logic function.
-        """
-        if self.is_time_to_submit():
-            event_dict = EventBot._get_event_dict(event_json)
-            title = event_dict['title']
-            if title:
-                self.submit_table(title)
-            else:
-                logger.info("No articles have been published yet today.")
-        else:
-            logger.info("Not time to submit.")
-
-    def is_time_to_submit(self):
-        """
-        Check if enough time has passed to submit another article.
-        This function checks the creation time of FAUbot's newest submissions. If at least 24 hours has passed since the
-        last article submission, it is time to submit a new article. The 24 hour interval is configurable in
-        config/bot_config.yaml.
-        :return: True if enough time has passed for a new article to be submitted.
-        """
-        is_time = True
-        me = self.r.get_me()
-        now = datetime.datetime.utcnow()
-        target_interval = datetime.timedelta(hours=SUBMISSION_INTERVAL_HOURS)
-        logger.info("Checking if time to submit: targetInterval=[{}]".format(target_interval))
-        for post in me.get_submitted(sort="new", time="day"):
-            if post.url.startswith(self.base_url):
-                created = datetime.datetime.utcfromtimestamp(post.created_utc)
-                difference = now - created
-                if difference < target_interval:
-                    logger.info("Not time to submit: currentTime=[{}], lastSubmissionTime=[{}], "
-                                "difference=[{:5.2f} hrs]".format(now, created, (difference.seconds/60)/60))
-                    is_time = False
-                    break
-        else:
-            logger.info("Time to submit article. currentTime=[{}]".format(now))
-        return is_time
 
 
 
     def work(self):
-        table = self.get_reddit_table()
+        html = self._get_event_html()
+        soup = BeautifulSoup(html, "html.parser")
+        for event in soup.find_all('div', attrs={'data-tribejson': True}):
+            event_json = event.get('data-tribejson')
+        title = EventBot.get_title(event_json)
         self.submit_table(title)
 
 
+
 def main():
-    test = EventBot(RedditBot, run_once=True)  # the bot will only do one loop if you set that to True
-    test.work()
+    test = EventBot('FAUbot', run_once=True)  # the bot will only do one loop if you set that to True
+    test.start()
+    test.stop_event.wait() #this keeps the program alive while the bot does its work in a separate
 
 
 if __name__ == '__main__':
