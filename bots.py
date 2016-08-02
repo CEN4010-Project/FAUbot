@@ -31,6 +31,14 @@ class Bot(threading.Thread, metaclass=ABCMeta):
     It is a Thread that will continue to do work until it is told to stop.
     """
     def __init__(self, reset_sleep_interval=True, run_once=False, *args, **kwargs):
+        """
+        :param reset_sleep_interval: If True, the sleep interval will reset to the default value at the beginning of
+                                     every loop (you can modify the sleep interval with self.sleep_interval).
+                                     It is recommended you leave this True.
+        :param run_once: If True, the bot will not repeat its work function and will terminate after running once.
+        :param args: Needed so that arbitrary arguments may be passed without raising an exception
+        :param kwargs: Needed so that arbitrary keyword arguments may be passed without raising an exception
+        """
         super(Bot, self).__init__(daemon=True)
         self.stop_event = threading.Event()
         self.sleep_interval = DEFAULT_SLEEP_INTERVAL
