@@ -141,7 +141,7 @@ class NewsBot(RedditBot):
         """
         for subreddit in self.subreddits:
             if self.is_already_submitted(link_tuple.url, subreddit):
-                logger.info("Link already submitted: subreddit=[{}], url=[{}]".format(subreddit, link_tuple.url))
+                logger.info("Link already submitted: subreddit=[{}], url=[{}]".format(subreddit, link_tuple))
                 # sleep for shorter time if time to submit but random article was already submitted
                 self.sleep_interval = 5
             else:
