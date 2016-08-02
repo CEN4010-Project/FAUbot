@@ -95,7 +95,7 @@ class EventBot(RedditBot):
         for event in soup.find_all('div', attrs={'data-tribejson': True}):
             event_json = event.get('data-tribejson')
             event_dict = EventBot._get_event_dict(event_json)
-            if EventBot.has_event_passed(event_json) is False:
+            if not EventBot.has_event_passed(event_json):
                 table += TABLE_ROW.format(**event_dict)
         return table
 
