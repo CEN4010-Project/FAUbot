@@ -130,7 +130,6 @@ class EventBot(RedditBot):
         """
         for subreddit in self.subreddits:
             self.r.submit(subreddit, self.post_title, text=table)
-            print(table)
 
     def work(self):
         table = self.create_new_table()
