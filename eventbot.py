@@ -16,7 +16,6 @@ SUBMISSION_INTERVAL_HOURS = CONFIG['intervals']['submission_interval_hours']
 SUBREDDITS = CONFIG['subreddits']
 # endregion
 
-title = namedtuple('title', 'date')
 
 BASE_URL = "http://www.upressonline.com/fauevents/"
 TABLE_ROW = "{title} | {date} | {description}\n"
@@ -40,6 +39,7 @@ class EventBot(RedditBot):
         super(EventBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = BASE_URL
         self.subreddits = CONFIG.get('subreddits', None) or ['FAUbot']
+        self.post_title = "Event Calendar"
 
     @staticmethod
     def has_event_passed(event_json):
@@ -125,47 +125,36 @@ class EventBot(RedditBot):
             logger.error("Table could not be generated.")
         return table
 
-    def is_already_submitted(self, title, subreddit):
-        """
-        Checks if a URL has already been shared on self.subreddit.
-        Because praw.Reddit.search returns a generator instead of a list,
-        we have to actually loop through it to see if the post exists.
-        If no post exists, the loop won't happen and it will return False.
-        :param url: The url that will be searched for
-        :param subreddit: The subreddit where the url will be searched for
-        :return: True if the url has already been posted to the subreddit
-        """
-        for title in self.r.search("title:"+title, subreddit=subreddit):
-            if title:
-                return True
-        return False
 
-    def edit_existing_table(self):
-        self.create_new_table()
+    def get_existing_table_post(self,title, subreddit):
+        """
+         Checks if a URL has already been shared on self.subreddit.
+         Because praw.Reddit.search returns a generator instead of a list,
+         we have to actually loop through it to see if the post exists.
+         If no post exists, the loop won't happen and it will return False.
+         :param post: The url that will be searched for
+         :param subreddit: The subreddit where the url will be searched for
+         :return: True if the url has already been posted to the subreddit
+         """
+        for post in self.r.search("title:{} AND author:{}".format(title, self.USER_NAME), subreddit=subreddit):
+            if post:
+                return post
+        return None
 
     def create_new_table(self):
         html = self._get_event_html()
         table = self._make_reddit_table(html)
         return table
 
-    def submit_table(self, title):
+    def submit_new_table(self, table):
         """
         Submit a link to Reddit, and save the submission time to the database.
         :param title_tuple: A namedtuple with a url and a title.
         """
+        title = self.post_title
         for subreddit in self.subreddits:
-            if self.is_already_submitted(title, subreddit):
-                logger.info("Table already submitted: subreddit=[{}], title=[{}]".format(subreddit, title))
-                table = self.edit_exisiting_table()
-                self.r.submit(subreddit, title, text=table)
-                print(table)
-
-            else:
-                logger.info("Submitting Table: subreddit=[{}], title=[{}]".format(subreddit, title))
-                table = self.create_new_table()
-                self.r.submit(subreddit, title, text = table)
-                print(table)
-
+            self.r.submit(subreddit, title, text = table)
+            print(table)
 
 
     def work(self):
@@ -173,9 +162,16 @@ class EventBot(RedditBot):
         soup = BeautifulSoup(html, "html.parser")
         for event in soup.find_all('div', attrs={'data-tribejson': True}):
             event_json = event.get('data-tribejson')
-        title = EventBot.get_title(event_json)
-        self.submit_table(title)
-
+        title = self.get_title(event_json)
+        table = self.create_new_table()
+        for subreddit in self.subreddits:
+            existing_post = self.get_existing_table_post(title, subreddit)
+            if existing_post:  # if it exists
+                logger.info("Table already submitted")
+                existing_post.edit(table)
+            else:
+                logger.info("Submitting Table")
+                self.submit_new_table(table)  # I added the word 'new' to be more specific
 
 
 def main():
