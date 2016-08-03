@@ -31,6 +31,13 @@ class EventBot(RedditBot):
 
     @staticmethod
     def has_event_passed(event_json):
+        """
+        Takes the date field from the event_json strips it of all symbols and then
+        format it into a time object(US/Eastern) then compare it with the system current time
+        :param event_json: JSON stripped from the event's data-tribejson HTML attribute.
+        :type event_json: str
+        :return: return true if an event has passed
+        """
         event_dict = EventBot._get_event_dict(event_json)
         timestamp = event_dict['date']
         invalidChars = set(string.punctuation)
@@ -45,11 +52,6 @@ class EventBot(RedditBot):
 
         now = utc.localize(datetime.datetime.utcnow())  # get current time in UTC timezone
         return now > start_datetime  # True if now is after start time
-
-    def get_title(self, event_json):
-        event_dict = EventBot._get_event_dict(event_json)
-        title = event_dict['title']
-        return title
 
 
     @staticmethod
