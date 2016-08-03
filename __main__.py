@@ -5,6 +5,7 @@ from time import sleep
 
 import newsbot  # you must import your bot file here, even if you don't use it
 import eventbot
+import ticketbot
 import config
 from config import praw_config, bot_config
 from bots import InvalidBotClassName, BotSignature, RedditBot
