@@ -31,8 +31,8 @@ class EventBot(RedditBot):
     @staticmethod
     def has_event_passed(event_json):
         """
-        Takes the relevant values out of the event JSON and creates a simpler dictionary
-        that is used to format the string TABLE_ROW.
+        Takes the date field from the event_json strips it of all symbols and then
+        format it into a time object(US/Eastern) then compare it with the system current time
         :param event_json: JSON stripped from the event's data-tribejson HTML attribute.
         :type event_json: str
         :return: return true if an event has passed
