@@ -6,3 +6,4 @@ praw==3.5.0
 pyaml==15.8.2
 requests==2.10.0
 python-dateutil==2.5.3
+pytz==2016.4
