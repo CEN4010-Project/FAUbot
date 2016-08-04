@@ -5,6 +5,7 @@ import requests
 import datetime
 import string
 import json
+from cachetools import ttl_cache
 from pytz import timezone, utc
 from dateutil.parser import parse
 from bots import RedditBot
@@ -115,6 +116,7 @@ class EventBot(RedditBot):
             logger.error("Table could not be generated.")
         return table
 
+    @ttl_cache(ttl=3600)
     def get_existing_table_post(self, subreddit):
         """
          Searches a subreddit for a specific post. If found, return it. Else, return None.
