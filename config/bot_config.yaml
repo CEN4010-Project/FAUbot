@@ -1,6 +1,6 @@
 intervals:
     submission_interval_hours: 24
-    sleep_interval_seconds: 10
+    sleep_interval_seconds: 1200
 subreddits:
   - FAUbot
 user_agents:
