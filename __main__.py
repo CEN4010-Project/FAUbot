@@ -106,9 +106,8 @@ class GlobalDispatch(Dispatch):
 
 
 def _generate_bot_signature(name):
-    sig = BotSignature(classname=praw_config.get_bot_class_name(name), username=name,
+    return BotSignature(classname=praw_config.get_bot_class_name(name), username=name,
                         permissions=praw_config.get_reddit_oauth_scope(name))
-    return sig
 
 
 def _get_dispatch(cli_args):
