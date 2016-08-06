@@ -7,7 +7,6 @@ from cachetools import ttl_cache
 from pytz import timezone, utc
 from dateutil.parser import parse
 from bots import RedditBot
-from config.bot_config import get_subreddits
 from config.praw_config import get_all_site_names
 # region constants
 BASE_URL = "http://www.upressonline.com/fauevents/"

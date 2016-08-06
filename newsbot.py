@@ -5,7 +5,7 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from random import randint
 from config import getLogger
-from config.bot_config import get_interval, get_subreddits
+from config.bot_config import get_interval
 from bots import RedditBot
 
 # region constants
