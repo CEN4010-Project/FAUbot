@@ -26,7 +26,7 @@ class EventBot(RedditBot):
         self.sleep_interval = 300  # 5 minutes
         self.base_url = BASE_URL
         self.subreddits = get_subreddits()
-        self.post_title = "Event Calendar"
+        self.post_title = "{month} Event Calendar"
 
     @staticmethod
     def has_event_passed(event_json):
@@ -77,7 +77,14 @@ class EventBot(RedditBot):
         event_dict = json.loads(event_json)
         return {'title': HYPERLINK.format(text=event_dict['title'], url=event_dict['permalink']),
                 'date': event_dict['dateDisplay'],
-                'description': event_dict['excerpt'][3:-4] or "None provided",}
+                'description': event_dict['excerpt'][3:-4] or "None provided"}
+
+    @staticmethod
+    def _get_current_month_name():
+        return datetime.datetime.now().strftime('%B')
+
+    def _get_current_post_title(self):
+        return self.post_title.format(month=self._get_current_month_name())
 
     @staticmethod
     def _make_reddit_table(html):
@@ -119,7 +126,8 @@ class EventBot(RedditBot):
          :param subreddit: The subreddit where the url will be searched for
          :return: a Reddit post object, or None
          """
-        for post in self.r.search("title:{} AND author:{}".format(self.post_title, self.USER_NAME), subreddit=subreddit):
+        post_title = self._get_current_post_title()
+        for post in self.r.search("title:{} AND author:{}".format(post_title, self.USER_NAME), subreddit=subreddit):
             if post:
                 return post
         return None
@@ -130,7 +138,7 @@ class EventBot(RedditBot):
         :param table: A string containing a reddit markdown table
         """
         for subreddit in self.subreddits:
-            self.r.submit(subreddit, self.post_title, text=table)
+            self.r.submit(subreddit, self._get_current_post_title(), text=table)
 
     @staticmethod
     def is_table_empty(table):
