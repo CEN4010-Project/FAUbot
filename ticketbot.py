@@ -36,7 +36,7 @@ Right now I'm just a prototype, so I will not process your request.""".format(op
 def main():
     from config.praw_config import get_all_site_names
     from argparse import ArgumentParser
-    parser = ArgumentParser("Running EventBot by itself")
+    parser = ArgumentParser("Running TicketBot by itself")
     parser.add_argument("-a", "--account", dest="reddit_account", required=True, choices=get_all_site_names(),
                         help="Specify which Reddit account entry from praw.ini to use.")
     args = parser.parse_args()
