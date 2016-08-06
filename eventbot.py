@@ -2,7 +2,6 @@ from config import getLogger
 from bs4 import BeautifulSoup
 import requests
 import datetime
-import string
 import json
 from cachetools import ttl_cache
 from pytz import timezone, utc
