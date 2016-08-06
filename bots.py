@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 from config import getLogger
-from config.bot_config import CONFIG, get_user_agent
+from config.bot_config import CONFIG, get_user_agent, get_subreddits
 
 logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username permissions')
@@ -89,15 +89,15 @@ class RedditBot(Bot):
 
     debug_user_agent_template = '/u/{username} prototyping an automated reddit user'
 
-    def __init__(self, user_name=None, *args, **kwargs):
+    def __init__(self, user_name, *args, **kwargs):
         """
         Initializes a Reddit bot.
         :param user_agent: A string passed to Reddit that identifies the Bot.
         :param user_name: A Reddit username that the RedditBot will use.
         """
         super(RedditBot, self).__init__(*args, **kwargs)
-        self.USER_NAME = user_name or 'FAUbot'
-        self.USER_AGENT = get_user_agent(self.__class__.__name__)
+        self.USER_NAME = user_name
+        self.USER_AGENT = get_user_agent(self.__class__.__name__).format(username=self.USER_NAME)
         self.r = None  # the praw.Reddit instance
 
     @abstractmethod
@@ -163,8 +163,8 @@ class ExampleBot1(RedditBot):
     An example RedditBot to show how simple it is to create new bots.
     Only a constructor and a work function are needed.
     """
-    def __init__(self, user_agent=None, user_name=None):
-        super(ExampleBot1, self).__init__(user_agent, user_name)
+    def __init__(self, user_name):
+        super(ExampleBot1, self).__init__(user_name)
 
     def work(self):
         me = self.r.get_me()
@@ -191,8 +191,8 @@ class ExampleBot2(RedditBot):
     An example RedditBot to show how simple it is to create new bots.
     Only a constructor and a work function are needed.
     """
-    def __init__(self, user_agent=None, user_name=None):
-        super(ExampleBot2, self).__init__(user_agent, user_name)
+    def __init__(self, user_name):
+        super(ExampleBot2, self).__init__(user_name)
 
     def work(self):
         me = self.r.get_me()

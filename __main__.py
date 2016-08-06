@@ -1,7 +1,7 @@
 import threading
 from abc import ABCMeta
 from time import sleep
-
+from argparse import ArgumentParser
 
 import newsbot  # you must import your bot file here, even if you don't use it
 import eventbot
@@ -16,6 +16,9 @@ from bots import InvalidBotClassName, BotSignature, RedditBot
 BOT_CLASSES = {cls.__name__: cls for cls in RedditBot.get_subclasses()}
 
 logger = config.getLogger()
+parser = ArgumentParser(description="FAUbot options")
+parser.add_argument("-a", "--account", dest='account', choices=praw_config.get_all_site_names(),
+                    help="Specify which Reddit account configured in praw.ini will be used to launch bots.")
 
 
 # region DISPATCH
@@ -42,6 +45,7 @@ class Dispatch(threading.Thread, metaclass=ABCMeta):
                                                   for name in signature.classname]
             else:
                 raise InvalidBotClassName
+        pass
 
     def __enter__(self):
         """
@@ -96,17 +100,30 @@ class GlobalDispatch(Dispatch):
         Creates BotSignatures for every account in praw.ini, and initializes a Dispatch.
         :param stop_event: A threading.Event used to stop the Dispatch.
         """
-        signatures = [BotSignature(classname=praw_config.get_bot_class_name(name),
-                                   username=name,
-                                   permissions=praw_config.get_reddit_oauth_scope(name))
-                      for name in praw_config.get_all_site_names()]
+        signatures = [_generate_bot_signature(name) for name in praw_config.get_all_site_names()]
         super(GlobalDispatch, self).__init__(signatures, stop_event)
 # endregion
 
 
+def _generate_bot_signature(name):
+    sig = BotSignature(classname=praw_config.get_bot_class_name(name), username=name,
+                        permissions=praw_config.get_reddit_oauth_scope(name))
+    return sig
+
+
+def _get_dispatch(cli_args):
+    if cli_args.account:
+        return Dispatch, [_generate_bot_signature(cli_args.account)]
+    else:
+        return GlobalDispatch, None
+
+
 def main(args=None):
+    cli_args = parser.parse_args()
+    dispatch, params = _get_dispatch(cli_args)
+
     logger.info("Starting bots")
-    with GlobalDispatch():
+    with dispatch(params):
         try:
             while True:
                 sleep(1)
