@@ -15,18 +15,6 @@ SUBMISSION_INTERVAL_HOURS = get_interval('submission_interval_hours')
 # region globals
 logger = getLogger()
 Link = namedtuple('Link', 'url title')
-"""
-A namedtuple is just a regular tuple, e.g. (2, 'a', 5), which is an iterable container that is immutable,
-meaning you cannot change a value in it or add/remove values to/from it.
-
-The difference between a regular tuple and a namedtuple is that each value in a namedtuple has its own name. It's
-just an easy way to refer to the values in the tuple.
-
-The 'Link' namedtuple looks like this Link(url="www.example.com/article/1", title="This is the title")
-It has two values. The first is the link's URL, and the second is the title of the web page.
-
-So instead of having to use Link[0] for the URL and Link[1] for the title, I can say Link.url and Link.title
-"""
 # endregion
 
 
