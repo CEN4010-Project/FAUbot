@@ -25,7 +25,6 @@ class EventBot(RedditBot):
         super(EventBot, self).__init__(user_name=user_name, reset_sleep_interval=False, *args, **kwargs)
         self.sleep_interval = 300  # 5 minutes
         self.base_url = BASE_URL
-        self.subreddits = get_subreddits()
         self.post_title = "{month} Event Calendar"
 
     @staticmethod

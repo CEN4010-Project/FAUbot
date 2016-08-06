@@ -46,7 +46,6 @@ class NewsBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
         super(NewsBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = "http://www.upressonline.com"
-        self.subreddits = get_subreddits()
         self._last_created = None
 
 

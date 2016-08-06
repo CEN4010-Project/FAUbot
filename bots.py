@@ -98,6 +98,7 @@ class RedditBot(Bot):
         super(RedditBot, self).__init__(*args, **kwargs)
         self.USER_NAME = user_name
         self.USER_AGENT = get_user_agent(self.__class__.__name__).format(username=self.USER_NAME)
+        self.subreddits = get_subreddits()
         self.r = None  # the praw.Reddit instance
 
     @abstractmethod
