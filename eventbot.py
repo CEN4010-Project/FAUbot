@@ -1,4 +1,3 @@
-from collections import namedtuple
 from config import getLogger
 from bs4 import BeautifulSoup
 import requests

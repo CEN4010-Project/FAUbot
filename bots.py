@@ -2,7 +2,6 @@ import threading
 import praw
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from time import sleep
 
 from config import getLogger
 from config.bot_config import CONFIG, get_user_agent
@@ -185,7 +184,6 @@ class ExampleBot1(RedditBot):
             logger.info(this_wont_work)
         except ValueError:
             logger.exception("An exception occurred.")
-
 
 
 class ExampleBot2(RedditBot):
