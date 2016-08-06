@@ -23,6 +23,7 @@ and it is maintained by some of the original developers.
    Don't worry about running any of the code on that page. Just take note of your new client ID and secret ID after creating the app.
 4. Paste your client ID and secret ID into `praw.ini`.
 5. From the command line, run the script account_register.py like this:
+   
    `python account_register.py -a YourRedditAccountName`
    Make sure you replace `YourRedditAccountName` with the same user name from step 2.
 6. A browser window will open with a non-existent web page. Copy [the code in the URL's query string](http://praw.readthedocs.io/en/stable/_images/CodeUrl.png),
