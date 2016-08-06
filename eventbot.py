@@ -9,7 +9,7 @@ from pytz import timezone, utc
 from dateutil.parser import parse
 from bots import RedditBot
 from config.bot_config import get_subreddits
-
+from config.praw_config import get_all_site_names
 # region constants
 BASE_URL = "http://www.upressonline.com/fauevents/"
 TABLE_ROW = "{title} | {date} | {description}\n"
@@ -40,15 +40,13 @@ class EventBot(RedditBot):
         """
         event_dict = EventBot._get_event_dict(event_json)
         timestamp = event_dict['date']
-        invalidChars = set(string.punctuation)
-        if any(char in invalidChars for char in timestamp):
+        if " @ " in timestamp:
             full_date = timestamp.replace(" @ ", " ")
             dash_idx = full_date.index('-')
             date = full_date[:dash_idx - 1]
-            start_datetime = timezone("US/Eastern").localize(parse(date), is_dst=None).astimezone(utc)
         else:
             date = timestamp
-            start_datetime = timezone("US/Eastern").localize(parse(date), is_dst=None).astimezone(utc)
+        start_datetime = timezone("US/Eastern").localize(parse(date), is_dst=None).astimezone(utc)
 
         now = utc.localize(datetime.datetime.utcnow())  # get current time in UTC timezone
         return now > start_datetime  # True if now is after start time
@@ -135,22 +133,42 @@ class EventBot(RedditBot):
         for subreddit in self.subreddits:
             self.r.submit(subreddit, self.post_title, text=table)
 
+    @staticmethod
+    def is_table_empty(table):
+        """
+        Determine whether no new events are in the table, i.e. there are no new events scheduled.
+        :param table:
+        :return:
+        """
+        return table == TABLE_HEADER
+
     def work(self):
         table = self.create_new_table()
+        is_empty = self.is_table_empty(table)
+        logger.info("Table is {}empty".format('' if is_empty else 'not '))
         for subreddit in self.subreddits:
             existing_post = self.get_existing_table_post(subreddit)
-            if existing_post:  # if it exists
+            if existing_post:
+                contents = table if not is_empty else "There are no upcoming events scheduled at this time. " \
+                                                      "I will check every {} minutes".format(self.sleep_interval/60)
                 logger.info("Editing existing table post")
-                existing_post.edit(table)
-            else:
+                existing_post.edit(contents)
+            elif not is_empty:
                 logger.info("Submitting new table post")
                 self.submit_new_table(table)
+            else:
+                logger.info("Not submitting new calendar post because able is empty")
 
 
 def main():
-    test = EventBot('FAUbot', run_once=True)  # the bot will only do one loop if you set that to True
+    from argparse import ArgumentParser
+    parser = ArgumentParser("Running EventBot by itself")
+    parser.add_argument("-a", "--account", dest="reddit_account", required=True, choices=get_all_site_names(),
+                        help="Specify which Reddit account entry from praw.ini to use.")
+    args = parser.parse_args()
+    test = EventBot(args.reddit_account, run_once=True)
     test.start()
-    test.stop_event.wait()  # this keeps the program alive while the bot does its work in a separate thread
+    test.stop_event.wait()
 
 
 if __name__ == '__main__':
