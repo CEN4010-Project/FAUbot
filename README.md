@@ -25,6 +25,7 @@ and it is maintained by some of the original developers.
 5. From the command line, run the script account_register.py like this:
    
    `python account_register.py -a YourRedditAccountName`
+  
    Make sure you replace `YourRedditAccountName` with the same user name from step 2.
 6. A browser window will open with a non-existent web page. Copy [the code in the URL's query string](http://praw.readthedocs.io/en/stable/_images/CodeUrl.png),
    and paste it into the terminal where your script is running. The prompt should say `Enter Code:`.
