@@ -35,7 +35,7 @@ and it is maintained by some of the original developers.
 2. From the command line, navigate to the project directory.
 3. From *inside* the FAUbot directory, start the program with:
    - `python .` to launch bots using every Reddit account entry in `praw.ini`
-   - `python . -a YourRedditAccountName` to launch bots using a specific Reddit account entry in `praw.ini` (recommended)
+   - `python . -a YourRedditAccountName` to launch bots using a specific Reddit account entry in `praw.ini`
 
 **Note:** There is a known issue that the project cannot be run from outside the project directory, e.g. `python ./FAUbot`.
       I think it's an issue with PRAW assuming that `praw.ini` is always in the current working directory, which is
