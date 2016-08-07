@@ -21,8 +21,7 @@ logger = getLogger()
 
 class EventBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
-        super(EventBot, self).__init__(user_name=user_name, reset_sleep_interval=False, *args, **kwargs)
-        self.sleep_interval = 300  # 5 minutes
+        super(EventBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = BASE_URL
         self.post_title = "{month} Event Calendar"
 
