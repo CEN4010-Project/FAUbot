@@ -43,7 +43,7 @@ def get_interval(interval_name):
 
 
 def get_sleep_intervals():
-    return get_interval('sleep_interval')
+    return get_interval('sleep_intervals')
 
 
 def get_sleep_interval(bot_class_name='debug'):
