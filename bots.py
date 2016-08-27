@@ -3,14 +3,15 @@ import praw
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
+from config import bot_config
 from config import getLogger
-from config.bot_config import CONFIG, get_user_agent, get_subreddits
+
 
 logger = getLogger()  # you will need this to use logger functions
 BotSignature = namedtuple('BotSignature', 'classname username permissions')
 
-DEFAULT_SLEEP_INTERVAL = CONFIG['intervals']['sleep_interval_seconds']
-RUN_BOTS_ONCE = CONFIG['flags']['run_bots_once']
+DEFAULT_SLEEP_INTERVAL = bot_config.get_sleep_interval('default')
+RUN_BOTS_ONCE = bot_config.should_run_once()
 
 
 # region EXCEPTIONS
@@ -40,7 +41,7 @@ class Bot(threading.Thread, metaclass=ABCMeta):
         """
         super(Bot, self).__init__(daemon=True)
         self.stop_event = threading.Event()
-        self.sleep_interval = DEFAULT_SLEEP_INTERVAL
+        self.sleep_interval = bot_config.get_sleep_interval(self.__class__.__name__)
         self._reset_sleep_interval = reset_sleep_interval
         self._run_once = RUN_BOTS_ONCE or run_once
 
@@ -97,8 +98,8 @@ class RedditBot(Bot):
         """
         super(RedditBot, self).__init__(*args, **kwargs)
         self.USER_NAME = user_name
-        self.USER_AGENT = get_user_agent(self.__class__.__name__).format(username=self.USER_NAME)
-        self.subreddits = get_subreddits()
+        self.USER_AGENT = bot_config.get_user_agent(self.__class__.__name__).format(username=self.USER_NAME)
+        self.subreddits = bot_config.get_subreddits()
         self.r = None  # the praw.Reddit instance
 
     @abstractmethod
