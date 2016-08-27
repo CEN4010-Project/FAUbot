@@ -63,7 +63,7 @@ class Bot(threading.Thread, metaclass=ABCMeta):
         """
         while not self.stop_event.is_set():
             if self._reset_sleep_interval:
-                self.sleep_interval = DEFAULT_SLEEP_INTERVAL
+                self.sleep_interval = bot_config.get_sleep_interval(self.__class__.__name__)
             self.work()
             if self._run_once:
                 self.stop_event.set()
