@@ -7,9 +7,8 @@ logger = getLogger()
 
 class TicketBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
-        super().__init__(user_name, *args, reset_sleep_interval=False, **kwargs)
+        super().__init__(user_name, *args, **kwargs)
         self.COMMAND_PATTERN = "!FAUbot (buy|sell) (\d{1,2})"
-        self.sleep_interval = 5
 
     def work(self):
         logger.info("Getting unread messages")
