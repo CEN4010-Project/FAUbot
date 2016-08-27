@@ -5,7 +5,7 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from random import randint
 from config import getLogger
-from config.bot_config import get_interval, get_subreddits
+from config.bot_config import get_interval
 from bots import RedditBot
 
 # region constants
@@ -15,18 +15,6 @@ SUBMISSION_INTERVAL_HOURS = get_interval('submission_interval_hours')
 # region globals
 logger = getLogger()
 Link = namedtuple('Link', 'url title')
-"""
-A namedtuple is just a regular tuple, e.g. (2, 'a', 5), which is an iterable container that is immutable,
-meaning you cannot change a value in it or add/remove values to/from it.
-
-The difference between a regular tuple and a namedtuple is that each value in a namedtuple has its own name. It's
-just an easy way to refer to the values in the tuple.
-
-The 'Link' namedtuple looks like this Link(url="www.example.com/article/1", title="This is the title")
-It has two values. The first is the link's URL, and the second is the title of the web page.
-
-So instead of having to use Link[0] for the URL and Link[1] for the title, I can say Link.url and Link.title
-"""
 # endregion
 
 
@@ -46,7 +34,6 @@ class NewsBot(RedditBot):
     def __init__(self, user_name, *args, **kwargs):
         super(NewsBot, self).__init__(user_name=user_name, *args, **kwargs)
         self.base_url = "http://www.upressonline.com"
-        self.subreddits = get_subreddits()
         self._last_created = None
 
 
@@ -253,3 +240,19 @@ class NewsBot(RedditBot):
 
     def work(self):
         self.do_scheduled_submit()
+
+
+def main():
+    from config.praw_config import get_all_site_names
+    from argparse import ArgumentParser
+    parser = ArgumentParser("Running NewsBot by itself")
+    parser.add_argument("-a", "--account", dest="reddit_account", required=True, choices=get_all_site_names(),
+                        help="Specify which Reddit account entry from praw.ini to use.")
+    args = parser.parse_args()
+    test = NewsBot(args.reddit_account, run_once=True)
+    test.start()
+    test.stop_event.wait()
+
+
+if __name__ == '__main__':
+    main()
