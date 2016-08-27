@@ -1,12 +1,19 @@
 intervals:
     submission_interval_hours: 24
-    sleep_interval_seconds: 1200
+    sleep_intervals:
+        default: &defaultInterval 1200
+        debug: &debugInterval 5
+        NewsBot: *defaultInterval
+        EventBot: 600
+        TicketBot: 20
+        ExampleBot1: *debugInterval
+        ExampleBot2: *debugInterval
 subreddits:
-  - FAUbot
+    - FAUbot
 user_agents:
-    debug: &debug "/u/{username} prototyping a Reddit bot class"
-    ExampleBot1: *debug
-    ExampleBot2: *debug
+    debug: &debugAgent "/u/{username} prototyping a Reddit bot class"
+    ExampleBot1: *debugAgent
+    ExampleBot2: *debugAgent
     NewsBot: "/u/{username} submitting links from upressonline.com"
     EventBot: "/u/{username} creating a live FAU event calendar in a self post"
     TicketBot: "/u/{username} matching buyers and sellers of graduation tickets"
